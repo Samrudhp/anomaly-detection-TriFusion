@@ -5,6 +5,9 @@ from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision as mp_vision
 import numpy as np
 
+print("🎯 Loading MediaPipe Pose Detection...")
+print("   └─ 📦 Loading pose_landmarker_heavy.task...")
+
 MODEL_PATH = "pose_landmarker_heavy.task"
 BaseOptions = mp_tasks.BaseOptions
 PoseLandmarker = mp_vision.PoseLandmarker
@@ -15,6 +18,8 @@ options = PoseLandmarkerOptions(
     running_mode=VisionRunningMode.VIDEO
 )
 landmarker = PoseLandmarker.create_from_options(options)
+print("      ✅ MediaPipe Pose Landmarker loaded")
+print("🎯 Pose Detection Ready!\n")
 
 # Global timestamp counter for streaming
 _streaming_timestamp = 0

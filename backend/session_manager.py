@@ -137,10 +137,14 @@ class SessionManager:
     
     async def start_live_mode(self, websocket: WebSocket) -> bool:
         """Start live monitoring mode"""
-        print("🎥 Starting live monitoring mode...")
+        print("\n" + "="*80)
+        print("🎥 LIVE MONITORING MODE - Starting Real-time Analysis")
+        print("="*80)
+        print("🔧 Initializing live session...")
         
         can_start, reason = self.can_start_mode("live")
         if not can_start:
+            print(f"❌ Cannot start: {reason}")
             await websocket.send_json({"error": reason, "current_mode": self.current_mode})
             return False
         
@@ -151,12 +155,18 @@ class SessionManager:
                 self.running = True
                 self.anomaly_events = []
             
+            print("📹 Connecting to camera feed...")
+            print("🧵 Starting processing thread...")
+            
             # Start live processing in separate thread
             live_thread = Thread(target=self._live_processing_worker, args=(websocket,), name="LiveProcessor")
             self.processing_threads.append(live_thread)
             live_thread.start()
             
             print("✅ Live mode started successfully")
+            print("🔍 Tier 1 continuous analysis active")
+            print("🧠 Tier 2 AI reasoning on standby")
+            print("="*80 + "\n")
             return True
             
         except Exception as e:
@@ -166,15 +176,21 @@ class SessionManager:
     
     async def start_upload_mode(self, websocket: WebSocket, video_file_path: str) -> bool:
         """Start upload processing mode"""
-        print(f"📁 Starting upload processing mode for: {video_file_path}")
+        print("\n" + "="*80)
+        print("📁 UPLOAD ANALYSIS MODE - Starting Video Processing")
+        print("="*80)
+        print(f"📄 File: {os.path.basename(video_file_path)}")
+        print("🔧 Initializing upload session...")
         
         can_start, reason = self.can_start_mode("upload")
         if not can_start:
+            print(f"❌ Cannot start: {reason}")
             await websocket.send_json({"error": reason, "current_mode": self.current_mode})
             return False
         
         # Verify file exists
         if not os.path.exists(video_file_path):
+            print(f"❌ File not found: {video_file_path}")
             await websocket.send_json({"error": f"Video file not found: {video_file_path}"})
             return False
         
@@ -189,11 +205,16 @@ class SessionManager:
                 self.upload_session_dir = f"upload_results/session_{timestamp}"
                 os.makedirs(f"{self.upload_session_dir}/anomaly_frames", exist_ok=True)
                 
+                print(f"📁 Session directory: {self.upload_session_dir}")
+                
                 self.session_data = {
                     "video_file": video_file_path,
                     "session_dir": self.upload_session_dir,
                     "start_time": datetime.now().isoformat()
                 }
+            
+            print("🎬 Analyzing video properties...")
+            print("🧵 Starting batch processing thread...")
             
             # Start upload processing in separate thread
             upload_thread = Thread(
@@ -205,6 +226,9 @@ class SessionManager:
             upload_thread.start()
             
             print("✅ Upload mode started successfully")
+            print("🔍 Tier 1 frame-by-frame analysis active")
+            print("🧠 Tier 2 AI reasoning on anomaly detection")
+            print("="*80 + "\n")
             return True
             
         except Exception as e:

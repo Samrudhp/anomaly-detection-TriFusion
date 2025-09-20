@@ -9,6 +9,10 @@ groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def tier1_fusion(pose_summary, audio_summary, scene_summary):
+    print("\n" + "="*60)
+    print("🔍 TIER 1 ANALYSIS - Fast Detection Engine")
+    print("="*60)
+    
     # Extract scene anomaly probability for threshold check
     scene_prob = 0.0
     if "Scene anomaly probability:" in scene_summary:
@@ -19,36 +23,58 @@ def tier1_fusion(pose_summary, audio_summary, scene_summary):
             scene_prob = 0.0
     
     # Debug logging for scene probability parsing
-    print(f"🔍 Tier 1 Debug: scene_summary='{scene_summary}', parsed_prob={scene_prob}")
+    print(f"� Scene Analysis: {scene_summary}")
+    print(f"🎯 Parsed Probability: {scene_prob:.3f}")
     
     # Simple thresholds - no AI reasoning in Tier 1
     pose_anomaly_detected = "True" in pose_summary
+    print(f"🤸 Pose Analysis: {'🚨 ANOMALY' if pose_anomaly_detected else '✅ NORMAL'}")
     
     # Very sensitive thresholds to catch visual anomalies better
     if pose_anomaly_detected:
         scene_threshold = 0.15  # Lower threshold when pose anomaly is detected
     else:
-        scene_threshold = 0.20  # Much lower threshold for scene-only anomalies (22% should now trigger)
+        scene_threshold = 0.20  # Much lower threshold for scene-only anomalies
     
     moderate_scene_anomaly = scene_prob > scene_threshold
+    print(f"🎬 Scene Threshold: {scene_threshold} | Scene Score: {scene_prob:.3f} | Result: {'🚨 ANOMALY' if moderate_scene_anomaly else '✅ NORMAL'}")
     
     # Quick decisions without AI reasoning - but be more lenient
     if not pose_anomaly_detected and scene_prob < 0.10:  # Only skip if very low scene probability
+        print("✅ TIER 1 RESULT: NORMAL - Low threat indicators")
+        print("="*60 + "\n")
         return "Normal", f"Scene probability ({scene_prob:.2f}) and pose analysis indicate normal activity"
     
     # Simple threshold-based detection for Tier 1
     if pose_anomaly_detected or moderate_scene_anomaly:
         result = "Suspected Anomaly"
         details = f"Pose anomaly: {pose_anomaly_detected}, Scene probability: {scene_prob:.2f}"
-        print(f"🚨 Tier 1 ANOMALY: pose={pose_anomaly_detected}, scene={scene_prob:.2f}, threshold={scene_threshold}")
+        print(f"🚨 TIER 1 RESULT: SUSPECTED ANOMALY")
+        print(f"   └─ Pose: {'DETECTED' if pose_anomaly_detected else 'NORMAL'}")
+        print(f"   └─ Scene: {scene_prob:.3f} (threshold: {scene_threshold})")
+        print(f"   └─ 🧠 Triggering Tier 2 AI Analysis...")
+        print("="*60 + "\n")
         return result, details
     else:
         result = "Normal"
         details = f"Pose anomaly: {pose_anomaly_detected}, Scene probability: {scene_prob:.2f}"
-        print(f"✅ Tier 1 NORMAL: pose={pose_anomaly_detected}, scene={scene_prob:.2f}, threshold={scene_threshold}")
+        print(f"✅ TIER 1 RESULT: NORMAL")
+        print(f"   └─ Pose: {'DETECTED' if pose_anomaly_detected else 'NORMAL'}")
+        print(f"   └─ Scene: {scene_prob:.3f} (threshold: {scene_threshold})")
+        print("="*60 + "\n")
         return result, details
 
 def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
+    print("\n" + "="*70)
+    print("🧠 TIER 2 ANALYSIS - Deep AI Reasoning Engine")
+    print("="*70)
+    print("🔬 Input Data:")
+    print(f"   🎤 Audio: {'Available' if audio_transcript and len(audio_transcript.strip()) > 0 else 'No audio detected'}")
+    print(f"   👁️  Visual: {visual_anomaly_max:.3f} anomaly probability")
+    print(f"   📝 Scene: {' | '.join(captions) if captions else 'No captions'}")
+    print(f"   📊 Tier 1: {tier1_details}")
+    print("-"*70)
+    
     try:
         visual_summary = " | ".join(captions) if captions else "No captions."
         scene_summary = f"Highest visual anomaly probability: {visual_anomaly_max:.2f}"
@@ -74,7 +100,7 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
             f'"multimodal_agreement": <0-1 float>, "reasoning_summary": "<comprehensive 4-6 sentence analysis covering ALL points above>", "threat_severity_index": <0-1 float>}}'
         )
         
-        print(f"Tier 2 fusion prompt: {prompt}")  # Debug logging
+        print("🤖 Sending data to Groq LLM (llama-3.3-70b-versatile)...")
         
         response = groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
@@ -82,7 +108,7 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
             temperature=0.1  # Lower temperature for more consistent JSON output
         )
         output = response.choices[0].message.content.strip()
-        print(f"Tier 2 fusion raw response: {output}")  # Debug logging
+        print("📨 Received LLM response, processing...")
         
         # Clean up the response to extract JSON
         if "```json" in output:
@@ -114,19 +140,36 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
             if not (0 <= result[score_key] <= 1):
                 result[score_key] = max(0, min(1, result[score_key]))  # Clamp to 0-1
         
-        print(f"Tier 2 fusion successful: {result}")  # Debug logging
+        # Beautiful output formatting
+        threat_level = "🔴 HIGH" if result["threat_severity_index"] > 0.7 else "🟡 MEDIUM" if result["threat_severity_index"] > 0.4 else "🟢 LOW"
+        confidence = "🎯 HIGH" if result["multimodal_agreement"] > 0.7 else "⚠️ MEDIUM" if result["multimodal_agreement"] > 0.4 else "❓ LOW"
+        
+        print("✅ TIER 2 AI ANALYSIS COMPLETE")
+        print("-"*70)
+        print(f"🎯 Threat Level: {threat_level} ({result['threat_severity_index']:.1%})")
+        print(f"🤝 AI Confidence: {confidence} ({result['multimodal_agreement']:.1%})")
+        print(f"👁️  Visual Score: {result['visual_score']:.1%}")
+        print(f"🎤 Audio Score: {result['audio_score']:.1%}")
+        print("-"*70)
+        print("🧠 AI Reasoning:")
+        print(f"   {result['reasoning_summary']}")
+        print("="*70 + "\n")
+        
         return result
         
     except json.JSONDecodeError as e:
-        print(f"JSON decode error in tier2_fusion: {e}")
-        print(f"Raw output: {output}")
+        print(f"❌ JSON decode error in Tier 2: {e}")
+        print(f"📄 Raw LLM output: {output}")
     except Exception as e:
-        print(f"Error in tier2_fusion: {e}")
+        print(f"❌ Error in Tier 2 fusion: {e}")
     
     # Enhanced fallback with actual data-based scoring
     fallback_visual_score = min(1.0, visual_anomaly_max * 2)  # Scale up the visual score
     fallback_audio_score = 0.3 if audio_transcript and len(audio_transcript.strip()) > 0 else 0.1
     fallback_threat = (fallback_visual_score + fallback_audio_score) / 2
+    
+    print("⚠️  USING FALLBACK ANALYSIS")
+    print("-"*70)
     
     result = {
         "visual_score": fallback_visual_score,
@@ -136,5 +179,10 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
         "reasoning_summary": f"Fallback analysis: Visual anomaly {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}",
         "threat_severity_index": fallback_threat
     }
-    print(f"Using fallback tier2 result: {result}")
+    
+    print(f"🎯 Fallback Threat: {fallback_threat:.1%}")
+    print(f"👁️  Visual Score: {fallback_visual_score:.1%}")
+    print(f"🎤 Audio Score: {fallback_audio_score:.1%}")
+    print("="*70 + "\n")
+    
     return result

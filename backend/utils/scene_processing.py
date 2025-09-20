@@ -3,14 +3,22 @@ from transformers import AutoProcessor, CLIPModel, BlipProcessor, BlipForConditi
 from PIL import Image
 import torch
 
+print("🎨 Loading OpenAI CLIP Vision Models...")
+print("   ├─ 📦 Loading CLIP-ViT-Base-Patch32...")
 clip_processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+print("   │  ✅ CLIP Base model loaded")
 
+print("   ├─ 📦 Loading CLIP-ViT-Large-Patch14...")
 clip_large_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
 clip_large_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
+print("   │  ✅ CLIP Large model loaded")
 
+print("   └─ 📦 Loading BLIP Image Captioning...")
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+print("      ✅ BLIP model loaded")
+print("🎨 All Vision Models Ready!\n")
 
 def process_scene_tier1(video_path):
     cap = cv2.VideoCapture(video_path)

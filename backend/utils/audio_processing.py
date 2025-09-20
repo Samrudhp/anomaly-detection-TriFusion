@@ -9,8 +9,14 @@ from collections import deque
 from threading import Thread
 from tempfile import NamedTemporaryFile
 
+print("🎤 Loading OpenAI Whisper Speech Recognition...")
+print("   ├─ 📦 Loading Whisper Tiny model (fast)...")
 whisper_tiny = whisper.load_model("tiny")
+print("   │  ✅ Whisper Tiny loaded")
+print("   └─ 📦 Loading Whisper Large model (accurate)...")
 whisper_large = whisper.load_model("large")
+print("      ✅ Whisper Large loaded")
+print("🎤 Speech Recognition Ready!\n")
 
 class AudioStream:
     def __init__(self):

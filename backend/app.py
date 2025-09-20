@@ -12,7 +12,60 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "ERROR"  # Reduce OpenCV FFmpeg warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-app = FastAPI(title="Anomaly Detection System", version="2.0.0")
+def print_startup_banner():
+    """Print beautiful startup banner"""
+    print("\n" + "="*80)
+    print("█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█")
+    print("█                                                                              █")
+    print("█                    🤖 GenAI-Powered Anomaly Detection System                 █")
+    print("█                                                                              █")
+    print("█                           🧠 Two-Tier AI Architecture                        █")
+    print("█                                                                              █")
+    print("█    🔍 Tier 1: Fast Detection  │  🧠 Tier 2: Deep AI Reasoning               █")
+    print("█    • Pose Analysis            │  • Advanced Scene Understanding             █")
+    print("█    • Scene Thresholds         │  • Multi-modal AI Fusion                   █")
+    print("█    • Audio Processing         │  • Groq LLM Reasoning                      █")
+    print("█                                                                              █")
+    print("█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█")
+    print("="*80 + "\n")
+    
+    print("🚀 Initializing AI Models...")
+    print("┌──────────────────────────────────────────────────────────────────────────────┐")
+    print("│                           🧠 Loading AI Components                           │")
+    print("├──────────────────────────────────────────────────────────────────────────────┤")
+    print("│ 🎯 MediaPipe Pose Detection    │ ✅ Loading pose_landmarker_heavy.task       │")
+    print("│ 🎨 OpenAI CLIP Vision Models   │ ✅ Loading clip-vit-base & large models     │")
+    print("│ 📷 BLIP Image Captioning       │ ✅ Loading Salesforce/blip-image-captioning │")
+    print("│ 🎤 OpenAI Whisper STT          │ ✅ Loading whisper tiny & large models      │")
+    print("│ 🧠 Groq LLM Reasoning          │ ✅ Connecting to llama-3.3-70b-versatile    │")
+    print("└──────────────────────────────────────────────────────────────────────────────┘")
+    print()
+
+def print_mode_selection():
+    """Print available modes"""
+    print("🎯 Available Operating Modes:")
+    print("┌─────────────────────────────────────────────────────────────────────────────┐")
+    print("│                                                                             │")
+    print("│  🎥 LIVE MONITORING MODE        │  📁 UPLOAD ANALYSIS MODE                  │")
+    print("│  ├─ Real-time camera feed       │  ├─ Video file upload                    │")
+    print("│  ├─ Continuous Tier 1 analysis │  ├─ Batch processing                     │")
+    print("│  ├─ Instant anomaly alerts     │  ├─ Detailed frame analysis              │")
+    print("│  └─ Live WebSocket updates     │  └─ Comprehensive reporting              │")
+    print("│                                                                             │")
+    print("│  🌐 Access: /dashboard/live     │  🌐 Access: /dashboard/upload             │")
+    print("│                                                                             │")
+    print("└─────────────────────────────────────────────────────────────────────────────┘")
+    print()
+    print("🔗 Server running at: http://localhost:8000")
+    print("📊 API Documentation: http://localhost:8000/docs")
+    print("="*80 + "\n")
+
+# Print startup banner
+print_startup_banner()
+
+app = FastAPI(title="GenAI Anomaly Detection System", version="2.0.0")
+
+print("📁 Setting up directories and static file mounts...")
 
 # Create necessary directories
 os.makedirs("anomaly_frames", exist_ok=True)
@@ -24,6 +77,9 @@ os.makedirs("uploaded_videos", exist_ok=True)
 app.mount("/anomaly_frames", StaticFiles(directory="anomaly_frames"), name="anomaly_frames")
 app.mount("/recorded_videos", StaticFiles(directory="recorded_videos"), name="recorded_videos")
 app.mount("/upload_results", StaticFiles(directory="upload_results"), name="upload_results")
+
+print("✅ Directories and static mounts configured")
+print_mode_selection()
 
 # ==================== DASHBOARD ROUTES ====================
 
