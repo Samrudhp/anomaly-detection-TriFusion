@@ -158,6 +158,7 @@
         /* Anomaly Results */
         .anomaly-results {
             margin-top: 30px;
+            position: relative;
         }
         .anomaly-item {
             border: 1px solid #ddd;
@@ -166,6 +167,26 @@
             overflow: hidden;
             background: white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+        .new-anomaly-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            cursor: pointer;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         .anomaly-header {
             background: #dc3545;
@@ -376,6 +397,9 @@
         let anomalies = [];
         let totalFrames = 0;
         let processedFrames = 0;
+        let userHasScrolled = false;
+        let lastScrollTop = 0;
+        let newAnomalyCount = 0;
         
         // DOM elements
         const uploadSection = document.getElementById('uploadSection');
@@ -401,7 +425,37 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupFileUpload();
             checkSessionStatus();
+            setupScrollDetection();
         });
+        
+        // Setup scroll detection to track user interaction
+        function setupScrollDetection() {
+            let scrollTimer = null;
+            
+            window.addEventListener('scroll', function() {
+                const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // Clear any existing timer
+                if (scrollTimer) {
+                    clearTimeout(scrollTimer);
+                }
+                
+                // Set a timer to detect when user stops scrolling
+                scrollTimer = setTimeout(function() {
+                    // Check if user manually scrolled (not programmatic)
+                    if (Math.abs(currentScrollTop - lastScrollTop) > 50) {
+                        userHasScrolled = true;
+                    }
+                    lastScrollTop = currentScrollTop;
+                }, 150);
+            });
+            
+            // Reset scroll detection when processing starts
+            window.addEventListener('processing-started', function() {
+                userHasScrolled = false;
+                lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            });
+        }
         
         // Setup file upload functionality
         function setupFileUpload() {
@@ -505,6 +559,11 @@
             stopBtn.classList.remove('hidden');
             progressContainer.classList.remove('hidden');
             
+            // Reset scroll detection for new processing
+            userHasScrolled = false;
+            lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            window.dispatchEvent(new Event('processing-started'));
+            
             ws.onopen = function() {
                 console.log('WebSocket connected');
                 // Send video file path to start processing
@@ -605,6 +664,8 @@
                             <p><strong>Tier 1 Analysis:</strong> ${data.tier1_result?.details || 'N/A'}</p>
                             <p><strong>AI Reasoning:</strong> ${data.tier2_result?.reasoning_summary || 'N/A'}</p>
                             <p><strong>Threat Score:</strong> ${((data.tier2_result?.threat_severity_index || 0) * 100).toFixed(1)}%</p>
+                            ${data.tier2_result?.visual_score ? `<p><strong>Visual Score:</strong> ${(data.tier2_result.visual_score * 100).toFixed(1)}%</p>` : ''}
+                            ${data.tier2_result?.multimodal_agreement ? `<p><strong>Confidence:</strong> ${(data.tier2_result.multimodal_agreement * 100).toFixed(1)}%</p>` : ''}
                         </div>
                     </div>
                 </div>
@@ -616,8 +677,24 @@
             
             anomalyList.appendChild(anomalyDiv);
             
-            // Scroll to new anomaly
-            anomalyDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Only auto-scroll if user hasn't manually scrolled and it's a new anomaly
+            if (!userHasScrolled && anomalies.length <= 3) {
+                // Only auto-scroll for the first few anomalies
+                setTimeout(() => {
+                    anomalyDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            } else {
+                // For later anomalies, just highlight briefly and show notification
+                anomalyDiv.style.backgroundColor = '#fff3cd';
+                setTimeout(() => {
+                    anomalyDiv.style.backgroundColor = '';
+                }, 2000);
+                
+                // Show new anomaly indicator
+                if (userHasScrolled) {
+                    showNewAnomalyIndicator();
+                }
+            }
         }
         
         // Complete processing
@@ -661,6 +738,41 @@
             }
         }
         
+        // Show new anomaly indicator
+        function showNewAnomalyIndicator() {
+            newAnomalyCount++;
+            
+            // Remove existing indicator
+            const existingIndicator = document.getElementById('newAnomalyIndicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // Create new indicator
+            const indicator = document.createElement('div');
+            indicator.id = 'newAnomalyIndicator';
+            indicator.className = 'new-anomaly-indicator';
+            indicator.textContent = `🚨 ${newAnomalyCount} New Anomal${newAnomalyCount > 1 ? 'ies' : 'y'}`;
+            indicator.onclick = scrollToLatestAnomaly;
+            
+            document.body.appendChild(indicator);
+        }
+        
+        // Scroll to latest anomaly
+        function scrollToLatestAnomaly() {
+            const latestAnomaly = anomalyList.lastElementChild;
+            if (latestAnomaly && latestAnomaly.classList.contains('anomaly-item')) {
+                latestAnomaly.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Remove indicator
+                const indicator = document.getElementById('newAnomalyIndicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+                newAnomalyCount = 0;
+            }
+        }
+        
         // Reset interface
         function resetInterface() {
             // Reset variables
@@ -670,6 +782,14 @@
             anomalies = [];
             totalFrames = 0;
             processedFrames = 0;
+            userHasScrolled = false;
+            newAnomalyCount = 0;
+            
+            // Remove new anomaly indicator
+            const indicator = document.getElementById('newAnomalyIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
             
             // Reset UI
             fileInput.value = '';

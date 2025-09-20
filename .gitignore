@@ -52,6 +52,7 @@ backend/upload_results/videos/
 backend/upload_results/frames/
 backend/upload_results/json/
 upload_results/
+backend/uploaded_videos
 
 # IDE files
 .vscode/

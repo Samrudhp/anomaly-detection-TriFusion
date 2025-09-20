@@ -79,7 +79,7 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
         
         response = groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama3-70b-8192",
+            model="llama-3.1-70b-versatile",
             temperature=0.1  # Lower temperature for more consistent JSON output
         )
         output = response.choices[0].message.content.strip()
