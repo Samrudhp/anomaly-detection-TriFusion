@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Video - Anomaly Detection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        /* Mode Switch */
+        .mode-switch {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        .mode-switch a {
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            transition: background 0.3s;
+        }
+        .mode-switch a:hover {
+            background: #0056b3;
+        }
+        .mode-switch .current {
+            background: #28a745;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        .upload-section.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .file-input {
+            margin: 20px 0;
+        }
+        .file-input input[type="file"] {
+            display: none;
+        }
+        .file-input label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .file-input label:hover {
+            background: #0056b3;
+        }
+        
+        .upload-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        .upload-button:hover {
+            background: #1e7e34;
+        }
+        .upload-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        /* Status Section */
+        .status-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .status-section.processing {
+            border-color: #007bff;
+            background: #e7f3ff;
+        }
+        .status-section.complete {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .status-section.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* Anomaly Results */
+        .anomaly-results {
+            margin-top: 30px;
+        }
+        .anomaly-item {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .anomaly-header {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .anomaly-content {
+            padding: 20px;
+        }
+        .anomaly-frame {
+            max-width: 300px;
+            border-radius: 5px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .threat-level {
+            padding: 5px 15px;
+            border-radius: 15px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .threat-level.high { background: #dc3545; }
+        .threat-level.medium { background: #fd7e14; }
+        .threat-level.low { background: #28a745; }
+        
+        /* JSON Display */
+        .json-section {
+            margin: 20px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .json-header {
+            background: #6c757d;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        .json-content {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            display: none;
+        }
+        
+        /* Control Buttons */
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .control-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .control-btn.stop {
+            background: #dc3545;
+            color: white;
+        }
+        .control-btn.stop:hover {
+            background: #c82333;
+        }
+        .control-btn.reset {
+            background: #6c757d;
+            color: white;
+        }
+        .control-btn.reset:hover {
+            background: #545b62;
+        }
+        
+        /* File Info */
+        .file-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .file-info strong {
+            color: #495057;
+        }
+        
+        /* Hidden */
+        .hidden {
+            display: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            .anomaly-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📁 Upload Video Analysis</h1>
+            <p>Upload a video file for comprehensive anomaly detection and analysis</p>
+        </div>
+        
+        <!-- Mode Switch -->
+        <div class="mode-switch">
+            <a href="/dashboard/live">🎥 Live Monitoring</a>
+            <a href="/dashboard/upload" class="current">📁 Upload Analysis</a>
+        </div>
+        
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <h3>📤 Select Video File</h3>
+            <p>Drag and drop a video file here or click to browse</p>
+            
+            <div class="file-input">
+                <label for="videoFile">
+                    📂 Choose Video File
+                </label>
+                <input type="file" id="videoFile" accept="video/*">
+            </div>
+            
+            <div id="fileInfo" class="file-info hidden">
+                <strong>Selected File:</strong> <span id="fileName"></span><br>
+                <strong>Size:</strong> <span id="fileSize"></span><br>
+                <strong>Type:</strong> <span id="fileType"></span>
+            </div>
+            
+            <button class="upload-button" id="uploadBtn" disabled>
+                🚀 Start Analysis
+            </button>
+        </div>
+        
+        <!-- Status Section -->
+        <div class="status-section" id="statusSection">
+            <h3 id="statusTitle">📊 Ready to Process</h3>
+            <p id="statusMessage">Select a video file to begin analysis</p>
+            
+            <div class="progress-container hidden" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                <div style="margin-top: 10px; font-size: 14px;" id="progressDetails">
+                    Preparing for analysis...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn stop hidden" id="stopBtn">
+                🛑 Force Stop
+            </button>
+            <button class="control-btn reset hidden" id="resetBtn">
+                🔄 Reset
+            </button>
+        </div>
+        
+        <!-- JSON Debug Section -->
+        <div class="json-section">
+            <div class="json-header" onclick="toggleJsonDisplay()">
+                <span>🔧 Real-time Processing Data</span>
+                <span>▼</span>
+            </div>
+            <div class="json-content" id="jsonDisplay">
+                Waiting for processing data...
+            </div>
+        </div>
+        
+        <!-- Anomaly Results -->
+        <div class="anomaly-results">
+            <h2 id="resultsTitle">🚨 Anomaly Detection Results</h2>
+            <div id="anomalyList">
+                <p style="text-align: center; color: #6c757d; margin: 40px 0;">
+                    No anomalies detected yet. Upload and process a video to see results.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let uploadedFile = null;
+        let uploadedFilePath = null;
+        let ws = null;
+        let isProcessing = false;
+        let anomalies = [];
+        let totalFrames = 0;
+        let processedFrames = 0;
+        
+        // DOM elements
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('videoFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusSection = document.getElementById('statusSection');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const progressDetails = document.getElementById('progressDetails');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const jsonDisplay = document.getElementById('jsonDisplay');
+        const anomalyList = document.getElementById('anomalyList');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFileUpload();
+            checkSessionStatus();
+        });
+        
+        // Setup file upload functionality
+        function setupFileUpload() {
+            // File input change
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // Drag and drop
+            uploadSection.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadSection.classList.add('dragover');
+            });
+            
+            uploadSection.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadSection.classList.remove('dragover');
+            });
+            
+            uploadSection.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadSection.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect({ target: { files: files } });
+                }
+            });
+            
+            // Upload button
+            uploadBtn.addEventListener('click', startUpload);
+            
+            // Control buttons
+            stopBtn.addEventListener('click', forceStop);
+            resetBtn.addEventListener('click', resetInterface);
+        }
+        
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.type.startsWith('video/')) {
+                alert('Please select a video file');
+                return;
+            }
+            
+            uploadedFile = file;
+            
+            // Update file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileType.textContent = file.type;
+            fileInfo.classList.remove('hidden');
+            
+            // Enable upload button
+            uploadBtn.disabled = false;
+            
+            updateStatus('📂 File Selected', `Ready to analyze: ${file.name}`);
+        }
+        
+        // Start upload and analysis
+        async function startUpload() {
+            if (!uploadedFile) return;
+            
+            try {
+                updateStatus('📤 Uploading...', 'Uploading video file to server');
+                uploadBtn.disabled = true;
+                
+                // Upload file
+                const formData = new FormData();
+                formData.append('file', uploadedFile);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.detail || 'Upload failed');
+                }
+                
+                uploadedFilePath = result.file_path;
+                updateStatus('🔄 Processing...', 'Starting video analysis');
+                
+                // Start WebSocket processing
+                startWebSocketProcessing();
+                
+            } catch (error) {
+                updateStatus('❌ Upload Failed', `Error: ${error.message}`, 'error');
+                uploadBtn.disabled = false;
+            }
+        }
+        
+        // Start WebSocket processing
+        function startWebSocketProcessing() {
+            ws = new WebSocket('ws://localhost:8000/ws/upload');
+            isProcessing = true;
+            
+            // Show controls
+            stopBtn.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+            
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+                // Send video file path to start processing
+                ws.send(JSON.stringify({
+                    video_file_path: uploadedFilePath
+                }));
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateJsonDisplay(data);
+                handleProcessingMessage(data);
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                if (isProcessing) {
+                    updateStatus('🔌 Connection Lost', 'WebSocket connection closed', 'error');
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateStatus('❌ Connection Error', 'Failed to connect to processing server', 'error');
+            };
+        }
+        
+        // Handle processing messages
+        function handleProcessingMessage(data) {
+            switch (data.type) {
+                case 'started':
+                    totalFrames = data.total_frames;
+                    updateStatus('🚀 Analysis Started', `Processing ${totalFrames} frames at ${data.fps} FPS`);
+                    statusSection.className = 'status-section processing';
+                    break;
+                    
+                case 'progress':
+                    processedFrames = data.processed_count;
+                    updateProgress(data.progress_percent, data.frame_count, data.timestamp, data.status);
+                    break;
+                    
+                case 'anomaly':
+                    addAnomalyResult(data);
+                    break;
+                    
+                case 'complete':
+                    completeProcessing(data);
+                    break;
+                    
+                case 'error':
+                    updateStatus('❌ Processing Error', data.error || 'Unknown error occurred', 'error');
+                    break;
+                    
+                default:
+                    if (data.error) {
+                        updateStatus('❌ Error', data.error, 'error');
+                    }
+                    break;
+            }
+        }
+        
+        // Update progress
+        function updateProgress(percent, frameCount, timestamp, status) {
+            progressFill.style.width = percent + '%';
+            progressText.textContent = Math.round(percent) + '%';
+            
+            const mins = Math.floor(timestamp / 60);
+            const secs = Math.floor(timestamp % 60);
+            
+            progressDetails.innerHTML = `
+                Frame ${frameCount}/${totalFrames} | 
+                Time: ${mins}:${secs.toString().padStart(2, '0')} | 
+                Status: ${status} | 
+                Anomalies: ${anomalies.length}
+            `;
+        }
+        
+        // Add anomaly result
+        function addAnomalyResult(data) {
+            anomalies.push(data);
+            
+            const threatLevel = getThreatLevel(data.tier2_result?.threat_severity_index || 0.5);
+            
+            const anomalyDiv = document.createElement('div');
+            anomalyDiv.className = 'anomaly-item';
+            anomalyDiv.innerHTML = `
+                <div class="anomaly-header">
+                    <span>🚨 Anomaly #${data.anomaly_index} - Frame ${data.frame_count}</span>
+                    <span class="threat-level ${threatLevel.class}">${threatLevel.text}</span>
+                </div>
+                <div class="anomaly-content">
+                    <div style="display: flex; gap: 20px; align-items: flex-start;">
+                        <div>
+                            <img src="/${data.frame_file}" alt="Anomaly Frame" class="anomaly-frame" />
+                            <p><strong>Timestamp:</strong> ${formatTime(data.timestamp)}</p>
+                        </div>
+                        <div style="flex: 1;">
+                            <p><strong>Tier 1 Analysis:</strong> ${data.tier1_result?.details || 'N/A'}</p>
+                            <p><strong>AI Reasoning:</strong> ${data.tier2_result?.reasoning_summary || 'N/A'}</p>
+                            <p><strong>Threat Score:</strong> ${((data.tier2_result?.threat_severity_index || 0) * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (anomalyList.children.length === 1 && anomalyList.children[0].tagName === 'P') {
+                anomalyList.innerHTML = '';
+            }
+            
+            anomalyList.appendChild(anomalyDiv);
+            
+            // Scroll to new anomaly
+            anomalyDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Complete processing
+        function completeProcessing(data) {
+            isProcessing = false;
+            updateStatus('✅ Analysis Complete', 
+                `Processed ${data.processed_frames} frames. Found ${data.anomalies_found} anomalies.`, 
+                'complete');
+            
+            progressFill.style.width = '100%';
+            progressText.textContent = '100%';
+            
+            stopBtn.classList.add('hidden');
+            resetBtn.classList.remove('hidden');
+            
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        // Force stop processing
+        async function forceStop() {
+            try {
+                const response = await fetch('/api/session/force-stop', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus('🛑 Stopped', 'Processing forcefully stopped', 'error');
+                    isProcessing = false;
+                    stopBtn.classList.add('hidden');
+                    resetBtn.classList.remove('hidden');
+                    
+                    if (ws) {
+                        ws.close();
+                        ws = null;
+                    }
+                }
+            } catch (error) {
+                console.error('Force stop error:', error);
+            }
+        }
+        
+        // Reset interface
+        function resetInterface() {
+            // Reset variables
+            uploadedFile = null;
+            uploadedFilePath = null;
+            isProcessing = false;
+            anomalies = [];
+            totalFrames = 0;
+            processedFrames = 0;
+            
+            // Reset UI
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            uploadBtn.disabled = true;
+            progressContainer.classList.add('hidden');
+            stopBtn.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+            
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            
+            statusSection.className = 'status-section';
+            updateStatus('📊 Ready to Process', 'Select a video file to begin analysis');
+            
+            // Clear results
+            anomalyList.innerHTML = `
+                <p style="text-align: center; color: #6c757d; margin: 40px 0;">
+                    No anomalies detected yet. Upload and process a video to see results.
+                </p>
+            `;
+            
+            jsonDisplay.textContent = 'Waiting for processing data...';
+            
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        // Check session status
+        async function checkSessionStatus() {
+            try {
+                const response = await fetch('/api/session/status');
+                const status = await response.json();
+                
+                if (status.mode && status.mode !== 'upload') {
+                    showModeConflict(status.mode);
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+        
+        // Show mode conflict warning
+        function showModeConflict(currentMode) {
+            const message = `${currentMode.toUpperCase()} mode is currently active. Stop it to use upload mode?`;
+            if (confirm(message)) {
+                forceStop();
+            }
+        }
+        
+        // Update status display
+        function updateStatus(title, message, type = '') {
+            statusTitle.textContent = title;
+            statusMessage.textContent = message;
+            
+            statusSection.className = 'status-section';
+            if (type) {
+                statusSection.classList.add(type);
+            }
+        }
+        
+        // Update JSON display
+        function updateJsonDisplay(data) {
+            jsonDisplay.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        // Toggle JSON display
+        function toggleJsonDisplay() {
+            const content = document.getElementById('jsonDisplay');
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            
+            const arrow = document.querySelector('.json-header span:last-child');
+            arrow.textContent = isHidden ? '▲' : '▼';
+        }
+        
+        // Utility functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function getThreatLevel(score) {
+            if (score >= 0.7) return { class: 'high', text: 'HIGH THREAT' };
+            if (score >= 0.4) return { class: 'medium', text: 'MEDIUM THREAT' };
+            return { class: 'low', text: 'LOW THREAT' };
+        }
+    </script>
+</body>
+</html>

@@ -47,6 +47,12 @@ temp_audio.mp3
 temp_audio.wav
 audio_*.wav
 
+# Upload processing results
+backend/upload_results/videos/
+backend/upload_results/frames/
+backend/upload_results/json/
+upload_results/
+
 # IDE files
 .vscode/
 .idea/

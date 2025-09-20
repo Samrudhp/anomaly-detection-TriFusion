@@ -1,444 +1,251 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from tier1.tier1_pipeline import run_tier1_continuous
-from tier2.tier2_pipeline import run_tier2_continuous
-from utils.audio_processing import AudioStream
-import cv2
-import asyncio
-import queue
+from session_manager import session_manager
 import os
-import time
-from datetime import datetime
-from threading import Thread
-import numpy as np
 import warnings
+from datetime import datetime
+from typing import Dict, Any
 
 # Suppress various warnings and set environment variables
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "ERROR"  # Reduce OpenCV FFmpeg warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-app = FastAPI()
+app = FastAPI(title="Anomaly Detection System", version="2.0.0")
+
+# Create necessary directories
+os.makedirs("anomaly_frames", exist_ok=True)
+os.makedirs("recorded_videos", exist_ok=True)
+os.makedirs("upload_results", exist_ok=True)
+os.makedirs("uploaded_videos", exist_ok=True)
 
 # Mount static files for anomaly frames and videos
 app.mount("/anomaly_frames", StaticFiles(directory="anomaly_frames"), name="anomaly_frames")
 app.mount("/recorded_videos", StaticFiles(directory="recorded_videos"), name="recorded_videos")
+app.mount("/upload_results", StaticFiles(directory="upload_results"), name="upload_results")
 
-# Global storage for anomaly events
-anomaly_events = []
+# ==================== DASHBOARD ROUTES ====================
 
-# Global status for live stream overlay
-current_status = "Normal"
-current_details = "Initializing..."
+@app.get("/dashboard/live")
+async def live_dashboard():
+    """Serve the live monitoring dashboard"""
+    return FileResponse("live_dashboard.html")
 
-def add_status_overlay(frame, status, details=""):
-    """Add colored overlay to frame based on anomaly status"""
-    height, width = frame.shape[:2]
-    
-    # Create overlay
-    overlay = frame.copy()
-    
-    # Choose color based on status
-    if status == "Suspected Anomaly":
-        color = (0, 0, 255)  # Red for anomaly
-        status_text = "🚨 ANOMALY DETECTED"
-    else:
-        color = (0, 255, 0)  # Green for normal
-        status_text = "✅ NORMAL"
-    
-    # Add colored border
-    cv2.rectangle(overlay, (0, 0), (width, height), color, 15)
-    
-    # Add status text background
-    text_bg_height = 80
-    cv2.rectangle(overlay, (0, 0), (width, text_bg_height), color, -1)
-    
-    # Add status text
-    cv2.putText(overlay, status_text, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
-    
-    # Add details text if available
-    if details and len(details) > 0:
-        detail_text = details[:100] + "..." if len(details) > 100 else details
-        cv2.putText(overlay, detail_text, (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-    
-    # Blend overlay with original frame
-    alpha = 0.7
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-    
-    return frame
+@app.get("/dashboard/upload")
+async def upload_dashboard():
+    """Serve the upload processing dashboard"""
+    return FileResponse("upload_dashboard.html")
 
-def generate_video_stream():
-    """Generate video stream with real-time status overlay"""
-    global current_status, current_details
-    
-    # Check if camera is already in use by WebSocket stream
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("❌ Cannot open camera for video stream - likely in use by WebSocket")
-        # Generate a placeholder stream instead of hanging
-        for i in range(100):  # Generate 100 placeholder frames
-            placeholder_frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            
-            # Add status overlay to placeholder
-            status_color = (0, 0, 255) if current_status == "Suspected Anomaly" else (0, 255, 0)
-            cv2.rectangle(placeholder_frame, (0, 0), (640, 480), status_color, 15)
-            cv2.putText(placeholder_frame, "Camera in use by monitoring", (50, 200), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-            cv2.putText(placeholder_frame, f"Status: {current_status}", (50, 250), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-            cv2.putText(placeholder_frame, current_details[:60], (50, 280), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-            
-            ret, buffer = cv2.imencode('.jpg', placeholder_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
-            if ret:
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-            
-            time.sleep(0.1)  # 10 FPS for placeholder
-        return
-    
-    # Set camera properties for better performance
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FPS, 15)  # Lower FPS for stream
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to prevent lag
-    
-    frame_count = 0
-    max_frames = 1000  # Prevent infinite loop
+@app.get("/dashboard")
+async def default_dashboard():
+    """Redirect to live dashboard by default"""
+    return FileResponse("live_dashboard.html")
+
+# ==================== SESSION MANAGEMENT API ====================
+
+@app.get("/api/session/status")
+async def get_session_status() -> Dict[str, Any]:
+    """Get current session status"""
+    return session_manager.get_status()
+
+@app.post("/api/session/force-stop")
+async def force_stop_session():
+    """Force stop current session"""
+    success = session_manager.force_stop_all()
+    return {
+        "success": success,
+        "message": "Session force stopped" if success else "Error during force stop",
+        "status": session_manager.get_status()
+    }
+
+# ==================== WEBSOCKET ENDPOINTS ====================
+
+@app.websocket("/ws/live")
+async def websocket_live_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for live monitoring"""
+    await websocket.accept()
     
     try:
-        while frame_count < max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                print("❌ Failed to read frame from camera")
+        success = await session_manager.start_live_mode(websocket)
+        if not success:
+            await websocket.close(code=1000, reason="Could not start live mode")
+            return
+            
+        # Keep connection alive and handle disconnection
+        while session_manager.current_mode == "live":
+            try:
+                # Wait for client messages (ping/pong, etc.)
+                await websocket.receive_text()
+            except WebSocketDisconnect:
                 break
-            
-            frame_count += 1
-            
-            # Add status overlay
-            try:
-                frame_with_overlay = add_status_overlay(frame, current_status, current_details)
-            except Exception as overlay_error:
-                print(f"Overlay error: {overlay_error}")
-                frame_with_overlay = frame  # Use original frame if overlay fails
-            
-            # Encode frame to JPEG with error handling
-            try:
-                ret, buffer = cv2.imencode('.jpg', frame_with_overlay, 
-                                          [cv2.IMWRITE_JPEG_QUALITY, 70])  # Lower quality for speed
-                if not ret:
-                    continue
+            except Exception as e:
+                print(f"WebSocket error: {e}")
+                break
                 
-                # Yield frame in multipart format
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-            except Exception as encode_error:
-                print(f"Frame encoding error: {encode_error}")
-                continue
-            
-            # Small delay to prevent overwhelming
-            time.sleep(0.05)  # ~20 FPS max
-    
-    except Exception as stream_error:
-        print(f"Video stream error: {stream_error}")
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
     finally:
-        cap.release()
-        print("📹 Video stream generator closed")
+        # Clean up when WebSocket closes
+        if session_manager.current_mode == "live":
+            session_manager.force_stop_all()
+
+@app.websocket("/ws/upload")
+async def websocket_upload_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for upload processing"""
+    await websocket.accept()
+    
+    try:
+        # Wait for video file path from client
+        message = await websocket.receive_json()
+        video_file_path = message.get("video_file_path")
+        
+        if not video_file_path:
+            await websocket.send_json({"error": "No video file path provided"})
+            return
+            
+        success = await session_manager.start_upload_mode(websocket, video_file_path)
+        if not success:
+            await websocket.close(code=1000, reason="Could not start upload mode")
+            return
+            
+        # Keep connection alive during processing
+        while session_manager.current_mode == "upload":
+            try:
+                await websocket.receive_text()
+            except WebSocketDisconnect:
+                break
+            except Exception as e:
+                print(f"WebSocket error: {e}")
+                break
+                
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        # Clean up when WebSocket closes
+        if session_manager.current_mode == "upload":
+            session_manager.force_stop_all()
+
+# ==================== FILE UPLOAD API ====================
+
+@app.post("/api/upload")
+async def upload_video(file: UploadFile = File(...)):
+    """Upload video file for processing"""
+    
+    # Validate file type
+    if not file.content_type.startswith('video/'):
+        raise HTTPException(status_code=400, detail="File must be a video")
+    
+    # Generate unique filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_extension = os.path.splitext(file.filename)[1]
+    filename = f"upload_{timestamp}{file_extension}"
+    file_path = f"uploaded_videos/{filename}"
+    
+    try:
+        # Save uploaded file
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        return {
+            "success": True,
+            "filename": filename,
+            "file_path": file_path,
+            "size": len(content),
+            "message": "File uploaded successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+# ==================== ANOMALY DATA API ====================
+
+@app.get("/api/anomalies")
+async def get_anomaly_events():
+    """Get all detected anomaly events"""
+    return {
+        "anomaly_events": session_manager.anomaly_events,
+        "total_count": len(session_manager.anomaly_events)
+    }
+
+@app.get("/api/anomalies/{event_index}")
+async def get_anomaly_event(event_index: int):
+    """Get specific anomaly event by index"""
+    if 0 <= event_index < len(session_manager.anomaly_events):
+        return session_manager.anomaly_events[event_index]
+    raise HTTPException(status_code=404, detail="Anomaly event not found")
+
+# ==================== VIDEO STREAMING (for live dashboard) ====================
 
 @app.get("/video_stream")
 async def video_stream():
-    """Live video stream endpoint with status overlay"""
-    try:
-        return StreamingResponse(
-            generate_video_stream(),
-            media_type="multipart/x-mixed-replace; boundary=frame",
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            }
-        )
-    except Exception as e:
-        print(f"Video stream endpoint error: {e}")
-        # Return a simple error response instead of hanging
-        return {"error": "Video stream unavailable", "details": str(e)}
-
-@app.get("/test_stream")
-async def test_stream():
-    """Simple test stream to check if camera works"""
-    def generate_test_stream():
+    """Simple video stream endpoint for live dashboard"""
+    from fastapi.responses import StreamingResponse
+    import cv2
+    
+    def generate_stream():
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
+            # Return placeholder frames if camera not available
+            for _ in range(100):
+                placeholder = create_placeholder_frame("Camera not available")
+                ret, buffer = cv2.imencode('.jpg', placeholder)
+                if ret:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                import time
+                time.sleep(0.1)
             return
         
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        
-        for i in range(50):  # Only 50 frames for testing
+        for _ in range(1000):  # Limit frames
             ret, frame = cap.read()
             if not ret:
                 break
             
-            # Simple frame without overlay
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
             if ret:
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            
+            import time
+            time.sleep(0.05)
         
         cap.release()
     
     return StreamingResponse(
-        generate_test_stream(),
+        generate_stream(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
-@app.websocket("/stream_video")
-async def stream_video(websocket: WebSocket):
-    await websocket.accept()
-    
-    # Try multiple times to open camera
-    video_cap = None
-    
-    # Suppress OpenCV warnings during camera setup
-    cv2.setLogLevel(0)
-    
-    for attempt in range(3):
-        video_cap = cv2.VideoCapture(0)
-        video_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to minimize lag
-        
-        if video_cap.isOpened():
-            # Test if we can actually read a frame
-            ret, test_frame = video_cap.read()
-            if ret:
-                print(f"✅ Camera opened successfully on attempt {attempt + 1}")
-                break
-            else:
-                video_cap.release()
-                video_cap = None
-        else:
-            video_cap = None
-        
-        if attempt < 2:  # Don't sleep on last attempt
-            await asyncio.sleep(1)
-    
-    if video_cap is None or not video_cap.isOpened():
-        await websocket.send_json({"error": "Could not open video stream after multiple attempts"})
-        return
+def create_placeholder_frame(message: str):
+    """Create a placeholder frame with message"""
+    import cv2
+    import numpy as np
+    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    cv2.putText(frame, message, (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    return frame
 
-    # Get video properties for recording
-    width = int(video_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = video_cap.get(cv2.CAP_PROP_FPS) or 30
-    
-    # Setup video recording with better codec settings
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    video_filename = f"recorded_videos/session_{timestamp}.mp4"
-    
-    # Use more compatible codec settings to reduce FFmpeg warnings
-    try:
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Try XVID first
-        video_writer = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
-        if not video_writer.isOpened():
-            # Fallback to mp4v if XVID fails
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            video_writer = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
-    except:
-        # Final fallback
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        video_writer = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
-    
-    print(f"📹 Recording video to: {video_filename}")
-
-    audio_stream = AudioStream()  # Start audio capture
-    audio_stream.start()
-
-    frame_queue = queue.Queue(maxsize=10)  # Buffer for frames
-    anomaly_detected = False
-
-    def capture_frames():
-        while True:
-            ret, frame = video_cap.read()
-            if not ret:
-                break
-            if not frame_queue.full():
-                frame_queue.put(frame)
-
-    frame_thread = Thread(target=capture_frames)
-    frame_thread.start()
-
-    try:
-        frame_interval = int(fps)  # For 1 FPS
-        frame_count = 0
-        session_start_time = time.time()
-        
-        while True:
-            if frame_queue.empty():
-                await asyncio.sleep(0.01)
-                continue
-
-            frame = frame_queue.get()
-            frame_count += 1
-            
-            # Record every frame to video with error handling
-            try:
-                if video_writer.isOpened():
-                    video_writer.write(frame)
-            except Exception as e:
-                # Silently handle video writing errors to avoid spam
-                pass
-            
-            # Process only every Nth frame for anomaly detection
-            if frame_count % frame_interval != 0:
-                continue
-
-            # Calculate current timestamp in video
-            current_timestamp = (frame_count / fps)
-            
-            # Get audio chunk (2-sec window)
-            audio_chunk = audio_stream.get_chunk()  # Get latest 2-sec audio
-            print(f"🎤 Audio chunk available: {bool(audio_chunk)}")
-
-            # Run Tier 1 on current frame and audio
-            try:
-                tier1_result = run_tier1_continuous(frame, audio_chunk)
-                
-                # Update global status for live stream overlay
-                global current_status, current_details
-                current_status = tier1_result["status"]
-                current_details = tier1_result["details"]
-                
-                # Add frame info to result
-                tier1_result["frame_count"] = frame_count
-                tier1_result["timestamp"] = current_timestamp
-                tier1_result["video_file"] = video_filename
-                
-                # Send result with WebSocket disconnect handling
-                try:
-                    if websocket.client_state.name == "CONNECTED":
-                        await websocket.send_json(tier1_result)
-                    else:
-                        print("WebSocket not connected, skipping send")
-                        break
-                except WebSocketDisconnect:
-                    print("WebSocket disconnected during Tier 1 result send")
-                    break
-                except Exception as e:
-                    print(f"WebSocket send error: {e}")
-                    break
-                except Exception as send_error:
-                    print(f"WebSocket send error: {send_error}")
-                    break
-                    
-            except Exception as e:
-                import traceback
-                error_details = traceback.format_exc()
-                print(f"Tier 1 processing error: {e}")
-                print(f"Full error traceback: {error_details}")
-                
-                # Send basic result without audio processing
-                tier1_result = {
-                    "status": "Normal", 
-                    "details": "Video processing only (audio error)",
-                    "error": f"Audio processing failed: {str(e)}",
-                    "frame_count": frame_count,
-                    "timestamp": current_timestamp,
-                    "video_file": video_filename
-                }
-                
-                # Send error result with WebSocket disconnect handling
-                try:
-                    await websocket.send_json(tier1_result)
-                except WebSocketDisconnect:
-                    print("WebSocket disconnected during error result send")
-                    break
-                except Exception as send_error:
-                    print(f"WebSocket send error during error handling: {send_error}")
-                    break
-
-            if tier1_result["status"] == "Suspected Anomaly":
-                anomaly_detected = True
-                
-                # Save anomaly frame
-                anomaly_frame_filename = f"anomaly_frames/anomaly_{timestamp}_{frame_count}.jpg"
-                cv2.imwrite(anomaly_frame_filename, frame)
-                
-                # Store anomaly event
-                anomaly_event = {
-                    "timestamp": current_timestamp,
-                    "frame_count": frame_count,
-                    "frame_file": anomaly_frame_filename,
-                    "video_file": video_filename,
-                    "details": tier1_result["details"],
-                    "session_time": datetime.now().isoformat()
-                }
-                anomaly_events.append(anomaly_event)
-                
-                print(f"🚨 ANOMALY SAVED: Frame {frame_count} at {current_timestamp:.2f}s -> {anomaly_frame_filename}")
-                
-                # Run Tier 2 on current frame/audio for reasoning
-                tier2_result = run_tier2_continuous(frame, audio_chunk, tier1_result)
-                
-                # Add frame info to tier2 result
-                tier2_result["frame_count"] = frame_count
-                tier2_result["timestamp"] = current_timestamp
-                tier2_result["video_file"] = video_filename
-                tier2_result["frame_file"] = anomaly_frame_filename
-                
-                # Update anomaly event with tier2 info
-                anomaly_event.update({
-                    "threat_severity_index": tier2_result.get("threat_severity_index", 0.5),
-                    "reasoning_summary": tier2_result.get("reasoning_summary", ""),
-                    "visual_score": tier2_result.get("visual_score", 0.5)
-                })
-                
-                # Send Tier 2 result with WebSocket disconnect handling
-                try:
-                    await websocket.send_json(tier2_result)
-                except WebSocketDisconnect:
-                    print("WebSocket disconnected during Tier 2 result send")
-                    break
-                except Exception as send_error:
-                    print(f"WebSocket send error during Tier 2: {send_error}")
-                    break
-
-            await asyncio.sleep(1 / fps)  # Control rate
-    except WebSocketDisconnect:
-        print("WebSocket client disconnected - stopping video stream")
-    except Exception as e:
-        print(f"Unexpected error in video stream: {e}")
-        try:
-            await websocket.send_json({"error": str(e)})
-        except (WebSocketDisconnect, Exception):
-            print("Could not send error message - WebSocket already closed")
-    finally:
-        # Cleanup resources
-        try:
-            video_cap.release()
-            video_writer.release()  # Close video recording
-            audio_stream.stop()
-            frame_thread.join()
-            print(f"📹 Video saved: {video_filename}")
-            print(f"🚨 Anomalies detected: {len([e for e in anomaly_events if e['video_file'] == video_filename])}")
-        except Exception as cleanup_error:
-            print(f"Error during cleanup: {cleanup_error}")
-
-@app.get("/anomaly_events")
-async def get_anomaly_events():
-    """Get all detected anomaly events"""
-    return {"anomaly_events": anomaly_events}
-
-@app.get("/anomaly_events/{event_index}")
-async def get_anomaly_event(event_index: int):
-    """Get specific anomaly event by index"""
-    if 0 <= event_index < len(anomaly_events):
-        return anomaly_events[event_index]
-    return {"error": "Event not found"}
-
-@app.get("/dashboard")
-async def dashboard():
-    """Serve the anomaly detection dashboard"""
-    return FileResponse("dashboard.html")
+# ==================== ROOT ENDPOINT ====================
 
 @app.get("/")
 async def root():
-    return {"message": "Anomaly Detection API", "total_anomalies": len(anomaly_events), "dashboard": "/dashboard"}
+    """API root endpoint"""
+    status = session_manager.get_status()
+    return {
+        "message": "Anomaly Detection System API v2.0",
+        "session_status": status,
+        "endpoints": {
+            "live_dashboard": "/dashboard/live",
+            "upload_dashboard": "/dashboard/upload", 
+            "session_status": "/api/session/status",
+            "force_stop": "/api/session/force-stop",
+            "upload_video": "/api/upload",
+            "anomalies": "/api/anomalies"
+        }
+    }

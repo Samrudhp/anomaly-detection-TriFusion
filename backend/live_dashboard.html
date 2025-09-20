@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Monitoring - Anomaly Detection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        /* Mode Switch */
+        .mode-switch {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        .mode-switch a {
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            transition: background 0.3s;
+        }
+        .mode-switch a:hover {
+            background: #0056b3;
+        }
+        .mode-switch .current {
+            background: #28a745;
+        }
+        
+        /* Mode Conflict Warning */
+        .mode-conflict {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .mode-conflict button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .mode-conflict button:hover {
+            background: #c82333;
+        }
+        
+        .video-section { margin-bottom: 20px; }
+        .anomaly-list { margin-top: 20px; }
+        .anomaly-item { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .anomaly-item.high-threat { border-left: 5px solid #ff4444; }
+        .anomaly-item.medium-threat { border-left: 5px solid #ffaa44; }
+        .anomaly-item.low-threat { border-left: 5px solid #44ff44; }
+        .anomaly-frame { max-width: 300px; margin: 10px 0; }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-weight: bold;
+        }
+        .status.normal { background: #d4edda; color: #155724; }
+        .status.anomaly { background: #f8d7da; color: #721c24; }
+        .live-feed { 
+            border: 2px solid #ddd; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 20px;
+        }
+        .live-feed.anomaly-detected { border-color: #ff4444; background: #ffe6e6; }
+        .video-container { 
+            text-align: center; 
+            margin: 15px 0; 
+        }
+        #liveVideoStream { 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: border-color 0.3s ease;
+        }
+        #liveVideoStream.anomaly-border { 
+            border-color: #ff4444 !important; 
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+        }
+        .stream-controls { 
+            text-align: center; 
+            margin-top: 15px; 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .video-controls { margin: 10px 0; }
+        #videoPlayer { width: 100%; max-width: 600px; }
+        
+        /* JSON Output Styles */
+        .json-output {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            border: 1px solid #444;
+        }
+        .json-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .json-toggle {
+            background: #28a745;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎥 Live Monitoring Dashboard</h1>
+            <p>Real-time video stream analysis and anomaly detection</p>
+        </div>
+        
+        <!-- Mode Switch -->
+        <div class="mode-switch">
+            <a href="/dashboard/live" class="current">🎥 Live Monitoring</a>
+            <a href="/dashboard/upload">📁 Upload Analysis</a>
+        </div>
+        
+        <!-- Mode Conflict Warning -->
+        <div id="modeConflict" class="mode-conflict" style="display: none;">
+            <strong>⚠️ Upload processing is currently active!</strong><br>
+            You need to stop the upload processing to start live monitoring.
+            <br>
+            <button onclick="forceStopUpload()">Force Stop Upload</button>
+            <button onclick="window.location.reload()">Refresh Status</button>
+        </div>
+        
+        <h1>🛡️ Real-time Anomaly Detection System</h1>
+        
+        <div class="live-feed" id="liveFeed">
+            <h2>Live Video Stream</h2>
+            <div id="status" class="status normal">Status: Normal</div>
+            <div id="currentDetails">Monitoring for anomalies...</div>
+            <div class="video-container">
+                <img id="liveVideoStream" src="/video_stream" alt="Live Video Stream" style="width: 100%; max-width: 640px; border: 3px solid #28a745; border-radius: 8px;">
+            </div>
+            <div class="stream-controls">
+                <button onclick="startLiveMonitoring()">🚀 Start Live Monitoring</button>
+                <button onclick="stopLiveMonitoring()">🛑 Stop Monitoring</button>
+                <button onclick="toggleStreamDisplay()">👁️ Toggle Stream Display</button>
+            </div>
+        </div>
+
+        <div class="json-section">
+            <h2>📊 Real-time JSON Data</h2>
+            <button class="json-toggle" onclick="toggleJsonDisplay()">Show/Hide JSON Output</button>
+            <div id="jsonOutput" class="json-output" style="display: none;">
+                Waiting for data...
+            </div>
+        </div>
+
+        <div class="video-section">
+            <h2>📹 Video Playback</h2>
+            <div class="video-controls">
+                <button onclick="loadLatestVideo()">Load Latest Recording</button>
+                <button onclick="jumpToAnomaly()">Jump to Last Anomaly</button>
+            </div>
+            <video id="videoPlayer" controls style="display:none;">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div class="anomaly-list">
+            <h2>🚨 Detected Anomalies</h2>
+            <button onclick="refreshAnomalies()">Refresh List</button>
+            <div id="anomalyList">No anomalies detected yet.</div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let anomalies = [];
+        let currentVideoFile = null;
+        let isLiveMode = false;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSessionStatus();
+        });
+        
+        // Check current session status
+        async function checkSessionStatus() {
+            try {
+                const response = await fetch('/api/session/status');
+                const status = await response.json();
+                
+                if (status.mode && status.mode === 'upload') {
+                    showModeConflict();
+                } else {
+                    hideModeConflict();
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+        
+        // Show mode conflict warning
+        function showModeConflict() {
+            document.getElementById('modeConflict').style.display = 'block';
+        }
+        
+        // Hide mode conflict warning
+        function hideModeConflict() {
+            document.getElementById('modeConflict').style.display = 'none';
+        }
+        
+        // Force stop upload processing
+        async function forceStopUpload() {
+            try {
+                const response = await fetch('/api/session/force-stop', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    hideModeConflict();
+                    alert('Upload processing stopped successfully. You can now start live monitoring.');
+                } else {
+                    alert('Failed to stop upload processing: ' + result.detail);
+                }
+            } catch (error) {
+                console.error('Force stop error:', error);
+                alert('Error stopping upload processing');
+            }
+        }
+        
+        // Start live monitoring
+        async function startLiveMonitoring() {
+            // Check for conflicts first
+            await checkSessionStatus();
+            const conflictDiv = document.getElementById('modeConflict');
+            if (conflictDiv.style.display !== 'none') {
+                alert('Please stop the upload processing first');
+                return;
+            }
+            
+            connectWebSocket();
+        }
+        
+        // Stop live monitoring
+        function stopLiveMonitoring() {
+            disconnectWebSocket();
+        }
+
+        function connectWebSocket() {
+            if (ws) {
+                ws.close();
+            }
+            
+            isLiveMode = true;
+            ws = new WebSocket('ws://localhost:8000/ws/live');
+            
+            ws.onopen = function(event) {
+                document.getElementById('status').textContent = 'Status: Connected - Live Monitoring...';
+                document.getElementById('status').className = 'status normal';
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                // Display detailed JSON output
+                document.getElementById('jsonOutput').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.error) {
+                    document.getElementById('currentDetails').textContent = 'Error: ' + data.error;
+                    return;
+                }
+
+                // Update current video file
+                if (data.video_file) {
+                    currentVideoFile = data.video_file;
+                }
+
+                if (data.status === 'Suspected Anomaly') {
+                    document.getElementById('status').textContent = 'Status: 🚨 ANOMALY DETECTED!';
+                    document.getElementById('status').className = 'status anomaly';
+                    document.getElementById('liveFeed').className = 'live-feed anomaly-detected';
+                    
+                    // Update live stream border to red
+                    const liveStream = document.getElementById('liveVideoStream');
+                    liveStream.className = 'anomaly-border';
+                    liveStream.style.borderColor = '#ff4444';
+                    
+                    // Add to anomalies list if it has frame info
+                    if (data.frame_count) {
+                        anomalies.push(data);
+                        displayAnomalies();
+                    }
+                } else {
+                    document.getElementById('status').textContent = 'Status: Normal';
+                    document.getElementById('status').className = 'status normal';
+                    document.getElementById('liveFeed').className = 'live-feed';
+                    
+                    // Update live stream border to green
+                    const liveStream = document.getElementById('liveVideoStream');
+                    liveStream.className = '';
+                    liveStream.style.borderColor = '#28a745';
+                }
+
+                document.getElementById('currentDetails').textContent = data.details || 'Monitoring...';
+            };
+
+            ws.onclose = function(event) {
+                if (isLiveMode) {
+                    document.getElementById('status').textContent = 'Status: Disconnected';
+                    document.getElementById('status').className = 'status normal';
+                    document.getElementById('liveFeed').className = 'live-feed';
+                    
+                    // Reset live stream border
+                    const liveStream = document.getElementById('liveVideoStream');
+                    liveStream.style.borderColor = '#ddd';
+                    
+                    isLiveMode = false;
+                    console.log('WebSocket closed:', event.code, event.reason);
+                }
+            };
+
+            ws.onerror = function(error) {
+                document.getElementById('currentDetails').textContent = 'WebSocket error occurred';
+                document.getElementById('status').textContent = 'Status: Connection Error';
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                isLiveMode = false;
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function displayAnomalies() {
+            const listDiv = document.getElementById('anomalyList');
+            if (anomalies.length === 0) {
+                listDiv.innerHTML = 'No anomalies detected yet.';
+                return;
+            }
+
+            let html = '';
+            anomalies.forEach((anomaly, index) => {
+                const threat = anomaly.threat_severity_index || 0.5;
+                const threatClass = threat > 0.7 ? 'high-threat' : threat > 0.4 ? 'medium-threat' : 'low-threat';
+                
+                html += `
+                    <div class="anomaly-item ${threatClass}">
+                        <h4>Anomaly #${index + 1} - Threat Level: ${(threat * 100).toFixed(0)}%</h4>
+                        <p><strong>Time:</strong> ${anomaly.timestamp?.toFixed(2) || 'Unknown'}s (Frame ${anomaly.frame_count || 'Unknown'})</p>
+                        <p><strong>Details:</strong> ${anomaly.details || 'No details'}</p>
+                        ${anomaly.reasoning_summary ? `<p><strong>AI Analysis:</strong> ${anomaly.reasoning_summary}</p>` : ''}
+                        ${anomaly.frame_file ? `
+                            <img src="/${anomaly.frame_file}" alt="Anomaly frame" class="anomaly-frame" />
+                        ` : ''}
+                        <button onclick="jumpToTime(${anomaly.timestamp || 0})">View in Video</button>
+                        <button onclick="showFrameDetails(${index})">Show Details</button>
+                    </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        }
+
+        function jumpToTime(timestamp) {
+            const video = document.getElementById('videoPlayer');
+            if (currentVideoFile && video) {
+                video.src = `/${currentVideoFile}`;
+                video.style.display = 'block';
+                video.currentTime = timestamp;
+                video.play();
+            } else {
+                alert('No video loaded. Please load a recording first.');
+            }
+        }
+
+        function loadLatestVideo() {
+            if (currentVideoFile) {
+                const video = document.getElementById('videoPlayer');
+                video.src = `/${currentVideoFile}`;
+                video.style.display = 'block';
+            } else {
+                alert('No video recording available. Start monitoring first.');
+            }
+        }
+
+        function jumpToAnomaly() {
+            if (anomalies.length > 0) {
+                const lastAnomaly = anomalies[anomalies.length - 1];
+                jumpToTime(lastAnomaly.timestamp || 0);
+            } else {
+                alert('No anomalies detected yet.');
+            }
+        }
+
+        function refreshAnomalies() {
+            fetch('/anomaly_events')
+                .then(response => response.json())
+                .then(data => {
+                    anomalies = data.anomaly_events || [];
+                    displayAnomalies();
+                })
+                .catch(error => {
+                    console.error('Error fetching anomalies:', error);
+                });
+        }
+
+        function toggleStreamDisplay() {
+            const streamImg = document.getElementById('liveVideoStream');
+            if (streamImg.style.display === 'none') {
+                streamImg.style.display = 'block';
+                streamImg.src = '/video_stream?' + new Date().getTime(); // Force refresh
+            } else {
+                streamImg.style.display = 'none';
+            }
+        }
+
+        function toggleJsonDisplay() {
+            const jsonOutput = document.getElementById('jsonOutput');
+            if (jsonOutput.style.display === 'none') {
+                jsonOutput.style.display = 'block';
+            } else {
+                jsonOutput.style.display = 'none';
+            }
+        }
+
+        function restartVideoStream() {
+            const streamImg = document.getElementById('liveVideoStream');
+            streamImg.src = '/video_stream?' + new Date().getTime(); // Force refresh with timestamp
+        }
+
+        // Auto-refresh video stream every 30 seconds to prevent stale streams
+        setInterval(() => {
+            const streamImg = document.getElementById('liveVideoStream');
+            if (streamImg.style.display !== 'none') {
+                restartVideoStream();
+            }
+        }, 30000);
+
+        function showFrameDetails(index) {
+            const anomaly = anomalies[index];
+            alert(`
+Anomaly Details:
+- Frame: ${anomaly.frame_count}
+- Timestamp: ${anomaly.timestamp?.toFixed(2)}s
+- Threat Level: ${((anomaly.threat_severity_index || 0.5) * 100).toFixed(0)}%
+- Visual Score: ${((anomaly.visual_score || 0.5) * 100).toFixed(0)}%
+- Audio Score: ${((anomaly.audio_score || 0.5) * 100).toFixed(0)}%
+- Video File: ${anomaly.video_file}
+- Frame File: ${anomaly.frame_file}
+            `);
+        }
+
+        // Auto-refresh anomalies every 5 seconds when monitoring
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                refreshAnomalies();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
