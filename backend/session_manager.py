@@ -153,7 +153,8 @@ class SessionManager:
                 self.current_mode = "live"
                 self.active_websocket = websocket
                 self.running = True
-                self.anomaly_events = []
+                # Don't clear anomaly_events - preserve previous detections
+                # self.anomaly_events = []  # REMOVED: This was causing anomalies to be lost
             
             print("📹 Connecting to camera feed...")
             print("🧵 Starting processing thread...")
@@ -391,7 +392,7 @@ class SessionManager:
             video_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             video_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             video_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            video_cap.set(cv2.CAP_PROP_FPS, 15)
+            video_cap.set(cv2.CAP_PROP_FPS, 30)  # Increased to 30 FPS for better capture
             
             if video_cap.isOpened():
                 ret, test_frame = video_cap.read()
@@ -415,7 +416,7 @@ class SessionManager:
     def _live_processing_loop(self, websocket, frame_queue, video_writer, audio_stream, fps, video_filename):
         """Main live processing loop (simplified from app.py)"""
         frame_count = 0
-        frame_interval = int(fps)
+        frame_interval = 5  # Process every 5th frame for optimal balance
         
         while self.running:
             if frame_queue.empty():
@@ -429,7 +430,7 @@ class SessionManager:
             if video_writer.isOpened():
                 video_writer.write(frame)
             
-            # Process every Nth frame
+            # Process every 5th frame (6 FPS analysis rate)
             if frame_count % frame_interval != 0:
                 continue
             

@@ -265,12 +265,27 @@ async def get_anomaly_events():
         "total_count": len(session_manager.anomaly_events)
     }
 
+# Backward compatibility endpoint
+@app.get("/anomaly_events")
+async def get_anomaly_events_legacy():
+    """Legacy endpoint for anomaly events (backward compatibility)"""
+    return {
+        "anomaly_events": session_manager.anomaly_events,
+        "total_count": len(session_manager.anomaly_events)
+    }
+
 @app.get("/api/anomalies/{event_index}")
 async def get_anomaly_event(event_index: int):
     """Get specific anomaly event by index"""
     if 0 <= event_index < len(session_manager.anomaly_events):
         return session_manager.anomaly_events[event_index]
     raise HTTPException(status_code=404, detail="Anomaly event not found")
+
+@app.delete("/api/anomalies")
+async def clear_anomaly_events():
+    """Clear all anomaly events (manual reset)"""
+    session_manager.anomaly_events.clear()
+    return {"message": "All anomaly events cleared", "total_count": 0}
 
 # ==================== VIDEO STREAMING (for live dashboard) ====================
 

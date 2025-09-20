@@ -110,6 +110,19 @@
             border-radius: 5px;
             background: rgba(15, 20, 25, 0.8);
             color: #00d4aa;
+            transition: all 0.3s ease;
+        }
+        .anomaly-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+        }
+        .anomaly-item.new-anomaly {
+            animation: anomalyAlert 2s ease-in-out;
+        }
+        @keyframes anomalyAlert {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 107, 107, 0.5); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 107, 107, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 107, 107, 0.5); }
         }
         .anomaly-item.high-threat { border-left: 5px solid #ff6b6b; }
         .anomaly-item.medium-threat { border-left: 5px solid #ffa502; }
@@ -279,8 +292,8 @@
 
         <div class="json-section">
             <h2>📊 Real-time Care Monitoring Data</h2>
-            <button class="json-toggle" onclick="toggleJsonDisplay()">Show/Hide JSON Output</button>
-            <div id="jsonOutput" class="json-output" style="display: none;">
+            <button class="json-toggle" onclick="toggleJsonDisplay()">Hide JSON Output</button>
+            <div id="jsonOutput" class="json-output" style="display: block;">
                 <strong>Context:</strong> Elder Care Monitoring<br>
                 Waiting for data...
             </div>
@@ -300,6 +313,7 @@
         <div class="anomaly-list">
             <h2>⚠️ Detected Safety Alerts</h2>
             <button onclick="refreshAnomalies()">Refresh List</button>
+            <button onclick="clearAnomalies()" style="margin-left: 10px; background: #dc2626;">Clear All</button>
             <div id="anomalyList">No anomalies detected yet.</div>
         </div>
     </div>
@@ -463,9 +477,29 @@
                     <strong>🎯 Threat Level:</strong> ${threatScore}%
                 `;
                 
-                // Add to anomalies list
+                // Add to anomalies list with visual notification
+                const oldCount = anomalies.length;
                 anomalies.push(data);
                 displayAnomalies();
+                
+                // Add visual indicator for new anomaly
+                setTimeout(() => {
+                    const anomalyItems = document.querySelectorAll('.anomaly-item');
+                    if (anomalyItems.length > oldCount) {
+                        const newItem = anomalyItems[anomalyItems.length - 1];
+                        newItem.classList.add('new-anomaly');
+                        // Remove animation class after animation completes
+                        setTimeout(() => {
+                            newItem.classList.remove('new-anomaly');
+                        }, 2000);
+                    }
+                }, 100);
+                
+                // Scroll to anomaly list to make it visible
+                document.querySelector('.anomaly-list').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
             }
             
             function handleLegacyMessage(data) {
@@ -539,20 +573,35 @@
 
             let html = '';
             anomalies.forEach((anomaly, index) => {
-                const threat = anomaly.threat_severity_index || 0.5;
+                // Extract data from nested structure (live WebSocket format) or flat format (API format)
+                const tier1Data = anomaly.tier1_result || {};
+                const tier2Data = anomaly.tier2_result || {};
+                
+                const threat = tier2Data.threat_severity_index || anomaly.threat_severity_index || 0.1;
                 const threatClass = threat > 0.7 ? 'high-threat' : threat > 0.4 ? 'medium-threat' : 'low-threat';
+                const threatPercent = (threat * 100).toFixed(1);
+                
+                // Get details from tier1 or fallback to anomaly.details
+                const tier1Details = tier1Data.details || anomaly.details || 'No details available';
+                const tier2Reasoning = tier2Data.reasoning_summary || anomaly.reasoning_summary || 'AI analysis not available';
+                
+                // Format timestamp
+                const timestamp = anomaly.timestamp || 0;
+                const frameCount = anomaly.frame_count || 'Unknown';
                 
                 html += `
                     <div class="anomaly-item ${threatClass}">
-                        <h4>Anomaly #${index + 1} - Threat Level: ${(threat * 100).toFixed(0)}%</h4>
-                        <p><strong>Time:</strong> ${anomaly.timestamp?.toFixed(2) || 'Unknown'}s (Frame ${anomaly.frame_count || 'Unknown'})</p>
-                        <p><strong>Details:</strong> ${anomaly.details || 'No details'}</p>
-                        ${anomaly.reasoning_summary ? `<p><strong>AI Analysis:</strong> ${anomaly.reasoning_summary}</p>` : ''}
+                        <h4>🚨 Safety Alert #${index + 1} - Threat Level: ${threatPercent}%</h4>
+                        <p><strong>⏰ Time:</strong> ${timestamp.toFixed(2)}s (Frame ${frameCount})</p>
+                        <p><strong>🔍 Tier 1 Detection:</strong> ${tier1Details}</p>
+                        <p><strong>🧠 AI Analysis:</strong> ${tier2Reasoning}</p>
                         ${anomaly.frame_file ? `
-                            <img src="/${anomaly.frame_file}" alt="Anomaly frame" class="anomaly-frame" />
+                            <img src="/${anomaly.frame_file}" alt="Safety Alert Frame" class="anomaly-frame" />
                         ` : ''}
-                        <button onclick="jumpToTime(${anomaly.timestamp || 0})">View in Video</button>
-                        <button onclick="showFrameDetails(${index})">Show Details</button>
+                        <div style="margin-top: 10px;">
+                            <button onclick="jumpToTime(${timestamp})">📹 View in Video</button>
+                            <button onclick="showFrameDetails(${index})" style="margin-left: 10px;">📊 Show Details</button>
+                        </div>
                     </div>
                 `;
             });
@@ -591,7 +640,7 @@
         }
 
         function refreshAnomalies() {
-            fetch('/anomaly_events')
+            fetch('/api/anomalies')
                 .then(response => response.json())
                 .then(data => {
                     anomalies = data.anomaly_events || [];
@@ -600,6 +649,23 @@
                 .catch(error => {
                     console.error('Error fetching anomalies:', error);
                 });
+        }
+
+        function clearAnomalies() {
+            if (confirm('Are you sure you want to clear all detected safety alerts?')) {
+                fetch('/api/anomalies', {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    anomalies = [];
+                    displayAnomalies();
+                    console.log('Anomalies cleared:', data.message);
+                })
+                .catch(error => {
+                    console.error('Error clearing anomalies:', error);
+                });
+            }
         }
 
         function toggleStreamDisplay() {
@@ -614,10 +680,14 @@
 
         function toggleJsonDisplay() {
             const jsonOutput = document.getElementById('jsonOutput');
+            const toggleButton = document.querySelector('.json-toggle');
+            
             if (jsonOutput.style.display === 'none') {
                 jsonOutput.style.display = 'block';
+                toggleButton.textContent = 'Hide JSON Output';
             } else {
                 jsonOutput.style.display = 'none';
+                toggleButton.textContent = 'Show JSON Output';
             }
         }
 
@@ -636,15 +706,37 @@
 
         function showFrameDetails(index) {
             const anomaly = anomalies[index];
+            const tier1Data = anomaly.tier1_result || {};
+            const tier2Data = anomaly.tier2_result || {};
+            
+            // Extract data from nested structure or fallback to flat structure
+            const threatLevel = tier2Data.threat_severity_index || anomaly.threat_severity_index || 0.1;
+            const visualScore = tier2Data.visual_anomaly_score || anomaly.visual_score || 0.0;
+            const audioScore = tier2Data.audio_anomaly_score || anomaly.audio_score || 0.0;
+            const tier1Details = tier1Data.details || anomaly.details || 'No tier 1 details';
+            const tier2Reasoning = tier2Data.reasoning_summary || anomaly.reasoning_summary || 'No AI analysis available';
+            
             alert(`
-Anomaly Details:
-- Frame: ${anomaly.frame_count}
-- Timestamp: ${anomaly.timestamp?.toFixed(2)}s
-- Threat Level: ${((anomaly.threat_severity_index || 0.5) * 100).toFixed(0)}%
-- Visual Score: ${((anomaly.visual_score || 0.5) * 100).toFixed(0)}%
-- Audio Score: ${((anomaly.audio_score || 0.5) * 100).toFixed(0)}%
-- Video File: ${anomaly.video_file}
-- Frame File: ${anomaly.frame_file}
+🚨 Safety Alert Details:
+
+📊 THREAT ASSESSMENT:
+- Threat Level: ${(threatLevel * 100).toFixed(1)}%
+- Visual Anomaly Score: ${(visualScore * 100).toFixed(1)}%
+- Audio Anomaly Score: ${(audioScore * 100).toFixed(1)}%
+
+⏰ TIMING INFO:
+- Frame: ${anomaly.frame_count || 'Unknown'}
+- Timestamp: ${(anomaly.timestamp || 0).toFixed(2)}s
+
+🔍 TIER 1 DETECTION:
+${tier1Details}
+
+🧠 AI ANALYSIS (TIER 2):
+${tier2Reasoning}
+
+📁 FILES:
+- Video: ${anomaly.video_file || 'N/A'}
+- Frame: ${anomaly.frame_file || 'N/A'}
             `);
         }
 

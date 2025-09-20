@@ -141,12 +141,16 @@ def process_scene_frame(image_array):
     normal_prob = max(probs[0], probs[1], probs[2])  # Max of normal activities
     anomaly_prob = max(probs[3], probs[4], probs[5], probs[6])  # Max of anomaly activities
     
-    # Return the anomaly probability if it exceeds normal probability by a very small margin
-    # Much more sensitive threshold to catch subtle visual anomalies
-    result = anomaly_prob.item() if anomaly_prob > normal_prob * 0.8 else 0.0  # Very sensitive: anomaly just needs to be 80% of normal
+    # Return the anomaly probability based on relative strength
+    # Calculate anomaly ratio: how strong is anomaly signal relative to normal
+    anomaly_ratio = anomaly_prob.item() / (normal_prob.item() + 1e-6)  # Add small epsilon to avoid division by zero
+    
+    # Return anomaly probability if the ratio indicates potential concern
+    # Even small anomaly signals should be considered in safety monitoring
+    result = anomaly_prob.item() if anomaly_ratio > 0.15 else 0.0  # If anomaly is >15% of normal strength
     
     # Debug logging to see what's happening
-    print(f"🎬 Scene Debug: normal_prob={normal_prob:.3f}, anomaly_prob={anomaly_prob:.3f}, threshold=0.8x, result={result:.3f}")
+    print(f"🎬 Scene Debug: normal_prob={normal_prob:.3f}, anomaly_prob={anomaly_prob:.3f}, ratio={anomaly_ratio:.3f}, threshold=0.15, result={result:.3f}")
     
     return result
 
