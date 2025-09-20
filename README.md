@@ -27,6 +27,15 @@
 
 ---
 
+## 📁 Project Resources
+
+🔗 **Google Drive - Project Assets & Documentation**  
+[Access TriFusion Project Resources](https://drive.google.com/drive/folders/1tk_Rn3My9xKM7dwIPjQ4TyI2oHMHlwuw?usp=sharing)
+
+*This folder contains additional project assets, demo videos, presentation materials, and supplementary documentation.*
+
+---
+
 ## 🎯 Project Overview
 
 **TriFusion** is a revolutionary multimodal AI platform that transforms Samsung's SmartThings Family Care ecosystem into the world's most advanced family safety monitoring solution. This hackathon project demonstrates production-ready AI technology that combines real-time video analysis, audio processing, pose detection, and advanced LLM reasoning to deliver unprecedented safety insights for elderly care and family protection.
