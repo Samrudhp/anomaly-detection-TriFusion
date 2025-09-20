@@ -593,6 +593,8 @@
         
         // Handle processing messages
         function handleProcessingMessage(data) {
+            console.log('📨 WebSocket message:', data);  // Debug log
+            
             switch (data.type) {
                 case 'started':
                     totalFrames = data.total_frames;
@@ -643,6 +645,7 @@
         
         // Add anomaly result
         function addAnomalyResult(data) {
+            console.log('🚨 Anomaly data received:', data);  // Debug log
             anomalies.push(data);
             
             const threatLevel = getThreatLevel(data.tier2_result?.threat_severity_index || 0.5);
@@ -661,11 +664,36 @@
                             <p><strong>Timestamp:</strong> ${formatTime(data.timestamp)}</p>
                         </div>
                         <div style="flex: 1;">
-                            <p><strong>Tier 1 Analysis:</strong> ${data.tier1_result?.details || 'N/A'}</p>
-                            <p><strong>AI Reasoning:</strong> ${data.tier2_result?.reasoning_summary || 'N/A'}</p>
-                            <p><strong>Threat Score:</strong> ${((data.tier2_result?.threat_severity_index || 0) * 100).toFixed(1)}%</p>
-                            ${data.tier2_result?.visual_score ? `<p><strong>Visual Score:</strong> ${(data.tier2_result.visual_score * 100).toFixed(1)}%</p>` : ''}
-                            ${data.tier2_result?.multimodal_agreement ? `<p><strong>Confidence:</strong> ${(data.tier2_result.multimodal_agreement * 100).toFixed(1)}%</p>` : ''}
+                            <h4 style="color: #dc3545; margin: 10px 0;">🔍 Tier 1 Quick Analysis</h4>
+                            <p><strong>Detection Summary:</strong> ${data.tier1_result?.details || 'N/A'}</p>
+                            
+                            <h4 style="color: #007bff; margin: 15px 0 10px 0;">🧠 Tier 2 AI Deep Analysis</h4>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                                <p><strong>🤖 AI Reasoning:</strong></p>
+                                <p style="font-style: italic; margin: 8px 0; line-height: 1.5;">${data.tier2_result?.reasoning_summary || 'No detailed analysis available'}</p>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                    <div>
+                                        <p><strong>🎯 Threat Level:</strong> <span style="color: ${threatLevel.class === 'high' ? '#dc3545' : threatLevel.class === 'medium' ? '#fd7e14' : '#28a745'};">${((data.tier2_result?.threat_severity_index || 0) * 100).toFixed(1)}%</span></p>
+                                        <p><strong>👁️ Visual Analysis:</strong> ${((data.tier2_result?.visual_score || 0) * 100).toFixed(1)}%</p>
+                                    </div>
+                                    <div>
+                                        <p><strong>🤝 AI Confidence:</strong> ${((data.tier2_result?.multimodal_agreement || 0) * 100).toFixed(1)}%</p>
+                                        <p><strong>🎤 Audio Factor:</strong> ${((data.tier2_result?.audio_score || 0) * 100).toFixed(1)}%</p>
+                                    </div>
+                                </div>
+                                
+                                ${data.tier2_result?.tier2_components ? `
+                                <details style="margin-top: 15px;">
+                                    <summary style="cursor: pointer; font-weight: bold; color: #495057;">📊 Technical Breakdown</summary>
+                                    <div style="margin-top: 10px; font-size: 12px; color: #6c757d;">
+                                        <p><strong>Visual Description:</strong> ${data.tier2_result.tier2_components.visual_analysis?.description || 'N/A'}</p>
+                                        <p><strong>Audio Transcript:</strong> ${data.tier2_result.tier2_components.audio_analysis?.full_transcript || 'No audio detected'}</p>
+                                        <p><strong>Text Alignment:</strong> ${((data.tier2_result.text_alignment_score || 0) * 100).toFixed(1)}%</p>
+                                    </div>
+                                </details>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>

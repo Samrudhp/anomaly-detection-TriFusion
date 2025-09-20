@@ -1,6 +1,5 @@
 from groq import Groq
 import json
-from groq import Groq
 from dotenv import load_dotenv
 import os
 
@@ -79,7 +78,7 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
         
         response = groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
             temperature=0.1  # Lower temperature for more consistent JSON output
         )
         output = response.choices[0].message.content.strip()
@@ -90,6 +89,13 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
             output = output.split("```json")[1].split("```")[0].strip()
         elif "```" in output:
             output = output.split("```")[1].split("```")[0].strip()
+        
+        # Remove any remaining markdown or extra formatting
+        output = output.strip()
+        if output.startswith('```'):
+            output = output[3:].strip()
+        if output.endswith('```'):
+            output = output[:-3].strip()
         
         # Try to parse JSON
         result = json.loads(output)
