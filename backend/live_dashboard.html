@@ -387,8 +387,30 @@
         }
         
         // Stop live monitoring
-        function stopLiveMonitoring() {
-            disconnectWebSocket();
+        async function stopLiveMonitoring() {
+            try {
+                // First disconnect WebSocket gracefully
+                disconnectWebSocket();
+                
+                // Then call the graceful stop endpoint
+                const response = await fetch('/api/session/stop-live', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('status').textContent = 'Status: Disconnected';
+                    document.getElementById('status').className = 'status normal';
+                    showNotification('Live monitoring stopped successfully', 'success');
+                } else {
+                    showNotification('Warning: ' + result.message, 'warning');
+                }
+                
+                // Reset UI state
+                document.getElementById('currentDetails').textContent = 'Not monitoring';
+                
+            } catch (error) {
+                console.error('Error stopping live monitoring:', error);
+                showNotification('Error stopping monitoring: ' + error.message, 'error');
+            }
         }
 
         function connectWebSocket() {
@@ -738,6 +760,25 @@ ${tier2Reasoning}
 - Video: ${anomaly.video_file || 'N/A'}
 - Frame: ${anomaly.frame_file || 'N/A'}
             `);
+        }
+
+        
+        // Notification function
+        function showNotification(message, type = 'info') {
+            // Create a simple notification using the status element
+            const statusElement = document.getElementById('status');
+            const originalText = statusElement.textContent;
+            const originalClass = statusElement.className;
+            
+            // Show notification
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            
+            // Restore original status after 3 seconds
+            setTimeout(() => {
+                statusElement.textContent = originalText;
+                statusElement.className = originalClass;
+            }, 3000);
         }
 
         // Auto-refresh anomalies every 5 seconds when monitoring

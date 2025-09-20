@@ -141,6 +141,16 @@ async def get_session_status() -> Dict[str, Any]:
     """Get current session status"""
     return session_manager.get_status()
 
+@app.post("/api/session/stop-live")
+async def stop_live_session():
+    """Gracefully stop live monitoring session"""
+    success = session_manager.graceful_stop_live()
+    return {
+        "success": success,
+        "message": "Live monitoring stopped" if success else "Error stopping live monitoring",
+        "status": session_manager.get_status()
+    }
+
 @app.post("/api/session/force-stop")
 async def force_stop_session():
     """Force stop current session"""
@@ -180,9 +190,9 @@ async def websocket_live_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket error: {e}")
     finally:
-        # Clean up when WebSocket closes
+        # Clean up when WebSocket closes - use graceful stop instead of force stop
         if session_manager.current_mode == "live":
-            session_manager.force_stop_all()
+            session_manager.graceful_stop_live()
 
 @app.websocket("/ws/upload")
 async def websocket_upload_endpoint(websocket: WebSocket):
@@ -351,6 +361,7 @@ async def root():
             "live_dashboard": "/dashboard/live",
             "upload_dashboard": "/dashboard/upload", 
             "session_status": "/api/session/status",
+            "stop_live": "/api/session/stop-live",
             "force_stop": "/api/session/force-stop",
             "upload_video": "/api/upload",
             "anomalies": "/api/anomalies"

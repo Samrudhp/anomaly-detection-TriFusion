@@ -56,6 +56,80 @@ class SessionManager:
                 "resources_active": any(self.resources.values())
             }
     
+    def graceful_stop_live(self) -> bool:
+        """
+        Gracefully stop live monitoring session without forcing thread termination.
+        Returns True if successful, False if errors occurred.
+        """
+        print("🛑 Gracefully stopping live monitoring...")
+        
+        with self.lock:
+            success = True
+            
+            # 1. Set stop flag - this will cause threads to exit naturally
+            self.running = False
+            self.current_mode = None
+            self.active_websocket = None
+            
+            # 2. Release video resources gracefully
+            if self.resources.get('video_capture'):
+                try:
+                    self.resources['video_capture'].release()
+                    self.resources['video_capture'] = None
+                    print("📹 Released video capture")
+                except Exception as e:
+                    print(f"❌ Error releasing video capture: {e}")
+                    success = False
+            
+            # 3. Release video writer gracefully
+            if self.resources.get('video_writer'):
+                try:
+                    self.resources['video_writer'].release()
+                    self.resources['video_writer'] = None
+                    print("💾 Released video writer")
+                except Exception as e:
+                    print(f"❌ Error releasing video writer: {e}")
+                    success = False
+            
+            # 4. Stop audio stream gracefully
+            if self.resources.get('audio_stream'):
+                try:
+                    self.resources['audio_stream'].stop()
+                    self.resources['audio_stream'].close()
+                    self.resources['audio_stream'] = None
+                    print("🎤 Stopped audio stream")
+                except Exception as e:
+                    print(f"❌ Error stopping audio stream: {e}")
+                    success = False
+            
+            # 5. Clear frame queue
+            try:
+                while not self.frame_queue.empty():
+                    self.frame_queue.get_nowait()
+                print("🗂️ Cleared frame queue")
+            except Exception as e:
+                print(f"❌ Error clearing frame queue: {e}")
+                success = False
+        
+        # 6. Wait for threads to finish naturally (outside lock to avoid deadlock)
+        for thread in self.processing_threads[:]:  # Copy list to avoid modification during iteration
+            if thread.is_alive():
+                try:
+                    print(f"⏳ Waiting for thread {thread.name} to finish...")
+                    thread.join(timeout=5.0)  # Wait up to 5 seconds
+                    if not thread.is_alive():
+                        print(f"✅ Thread {thread.name} finished gracefully")
+                        self.processing_threads.remove(thread)
+                    else:
+                        print(f"⚠️ Thread {thread.name} did not finish in time")
+                        success = False
+                except Exception as e:
+                    print(f"❌ Error waiting for thread {thread.name}: {e}")
+                    success = False
+        
+        print(f"✅ Graceful stop completed {'successfully' if success else 'with errors'}")
+        return success
+    
     def force_stop_all(self) -> bool:
         """
         Immediately terminate all threads and release all resources.
