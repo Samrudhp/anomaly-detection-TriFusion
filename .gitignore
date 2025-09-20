@@ -85,3 +85,6 @@ logs/
 # *.task
 # *.bin
 # *.safetensors
+
+# Sensitive documentation
+docs/samsung_pitch.md

@@ -179,6 +179,33 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
         print(f"❌ JSON decode error in Tier 2: {e}")
         print(f"📄 Raw LLM output: {output}")
         print(f"🔍 Debug - Output length: {len(output) if 'output' in locals() else 'undefined'}")
+        
+        # Enhanced fallback with actual data-based scoring
+        fallback_visual_score = min(1.0, visual_anomaly_max * 2)  # Scale up the visual score
+        fallback_audio_score = 0.3 if audio_transcript and len(audio_transcript.strip()) > 0 else 0.1
+        fallback_threat = (fallback_visual_score + fallback_audio_score) / 2
+        
+        print("⚠️  USING FALLBACK ANALYSIS (JSON Parse Error)")
+        print("-"*70)
+        
+        reasoning = f"JSON parsing failed - using fallback analysis. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
+        
+        result = {
+            "visual_score": fallback_visual_score,
+            "audio_score": fallback_audio_score,
+            "text_alignment_score": 0.4,
+            "multimodal_agreement": 0.4,
+            "reasoning_summary": reasoning,
+            "threat_severity_index": fallback_threat
+        }
+        
+        print(f"🎯 Fallback Threat: {fallback_threat:.1%}")
+        print(f"👁️  Visual Score: {fallback_visual_score:.1%}")
+        print(f"🎤 Audio Score: {fallback_audio_score:.1%}")
+        print("="*70 + "\n")
+        
+        return result
+        
     except Exception as e:
         print(f"❌ Error in Tier 2 fusion: {type(e).__name__}: {e}")
         print(f"🔑 Groq API key present: {'Yes' if os.getenv('GROQ_API_KEY') else 'No'}")
@@ -198,34 +225,34 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
             print(f"📡 API Response: {e.response}")
         import traceback
         print(f"📋 Full traceback: {traceback.format_exc()}")
-    
-    # Enhanced fallback with actual data-based scoring
-    fallback_visual_score = min(1.0, visual_anomaly_max * 2)  # Scale up the visual score
-    fallback_audio_score = 0.3 if audio_transcript and len(audio_transcript.strip()) > 0 else 0.1
-    fallback_threat = (fallback_visual_score + fallback_audio_score) / 2
-    
-    print("⚠️  USING FALLBACK ANALYSIS (Groq API Unavailable)")
-    print("-"*70)
-    
-    # Determine fallback reasoning based on available data
-    if "rate_limit" in str(e).lower():
-        reasoning = f"Rate limit reached - using local analysis. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
-    else:
-        reasoning = f"AI reasoning unavailable - using fallback. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
-    
-    result = {
-        "visual_score": fallback_visual_score,
-        "audio_score": fallback_audio_score,
-        "text_alignment_score": 0.4,
-        "multimodal_agreement": 0.4,
-        "reasoning_summary": reasoning,
-        "threat_severity_index": fallback_threat
-    }
-    
-    print(f"🎯 Fallback Threat: {fallback_threat:.1%}")
-    print(f"👁️  Visual Score: {fallback_visual_score:.1%}")
-    print(f"🎤 Audio Score: {fallback_audio_score:.1%}")
-    print("💡 Note: Upgrade Groq API tier for full AI reasoning")
-    print("="*70 + "\n")
-    
-    return result
+        
+        # Enhanced fallback with actual data-based scoring
+        fallback_visual_score = min(1.0, visual_anomaly_max * 2)  # Scale up the visual score
+        fallback_audio_score = 0.3 if audio_transcript and len(audio_transcript.strip()) > 0 else 0.1
+        fallback_threat = (fallback_visual_score + fallback_audio_score) / 2
+        
+        print("⚠️  USING FALLBACK ANALYSIS (Groq API Unavailable)")
+        print("-"*70)
+        
+        # Determine fallback reasoning based on available data
+        if "rate_limit" in str(e).lower():
+            reasoning = f"Rate limit reached - using local analysis. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
+        else:
+            reasoning = f"AI reasoning unavailable - using fallback. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
+        
+        result = {
+            "visual_score": fallback_visual_score,
+            "audio_score": fallback_audio_score,
+            "text_alignment_score": 0.4,
+            "multimodal_agreement": 0.4,
+            "reasoning_summary": reasoning,
+            "threat_severity_index": fallback_threat
+        }
+        
+        print(f"🎯 Fallback Threat: {fallback_threat:.1%}")
+        print(f"👁️  Visual Score: {fallback_visual_score:.1%}")
+        print(f"🎤 Audio Score: {fallback_audio_score:.1%}")
+        print("💡 Note: Upgrade Groq API tier for full AI reasoning")
+        print("="*70 + "\n")
+        
+        return result

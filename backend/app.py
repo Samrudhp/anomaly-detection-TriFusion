@@ -131,8 +131,8 @@ async def upload_dashboard():
 
 @app.get("/dashboard")
 async def default_dashboard():
-    """Redirect to live dashboard by default"""
-    return FileResponse("live_dashboard.html")
+    """Redirect to upload dashboard by default"""
+    return FileResponse("upload_dashboard.html")
 
 # ==================== SESSION MANAGEMENT API ====================
 
