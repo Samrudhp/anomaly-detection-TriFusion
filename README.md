@@ -118,7 +118,7 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
 ### Access Application
-- **Dashboard**: http://localhost:8000
+- **Dashboard**: http://localhost:8000/dashboard
 - **Live Monitoring**: http://localhost:8000/dashboard/live
 - **Video Upload**: http://localhost:8000/dashboard/upload
 
@@ -203,11 +203,6 @@ Complete project overview, architecture, and navigation guide.
 
 ## 📊 Performance Metrics
 
-### Detection Accuracy
-- **Fall Detection**: >95% accuracy
-- **Audio Distress**: >85% recognition rate
-- **Pose Analysis**: Real-time human movement tracking
-
 ### System Performance
 - **Response Time**: <100ms for Tier 1, <3s for Tier 2
 - **Real-Time Processing**: 25-30 FPS video analysis
@@ -234,18 +229,6 @@ pip install -r requirements.txt
 # Setup environment variables
 cp .env.example .env
 # Edit .env with your API keys
-```
-
-### Running Tests
-```bash
-# Run unit tests
-python -m pytest
-
-# Run integration tests
-python -m pytest tests/integration/
-
-# Performance benchmarking
-python -m pytest tests/benchmark/
 ```
 
 ### Development Server
@@ -277,13 +260,6 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ---
-
-## 📞 Contact
-
-**Team TriFusion**
-- **Email**: trifusion.team@gmail.com
-- **GitHub**: [@Samrudhp](https://github.com/Samrudhp)
-- **LinkedIn**: [Team TriFusion](https://linkedin.com/company/trifusion)
 
 ### Support
 - **Documentation**: [docs/README.md](./docs/README.md)
