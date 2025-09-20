@@ -17,15 +17,6 @@
 
 ---
 
-## 👥 Team Members
-
-| Name | Email | 
-|------|-------|
-| **Samrudh P** | 1ms23cs162@msrit.edu | 
-| **Sagar S R** | 1ms23cs158@msrit.edu | 
-| **Ranjita V Nayak** | 1ms23cs150@msrit.edu | 
-
----
 
 ## 📁 Project Resources
 
