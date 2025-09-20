@@ -325,7 +325,71 @@
                     return;
                 }
 
+                // Handle different message types
+                if (data.type === 'tier1_update') {
+                    // Continuous Tier 1 updates
+                    handleTier1Update(data);
+                } else if (data.type === 'anomaly') {
+                    // Anomaly detected with Tier 2 analysis
+                    handleAnomalyDetection(data);
+                } else {
+                    // Legacy format support
+                    handleLegacyMessage(data);
+                }
+            };
+            
+            function handleTier1Update(data) {
                 // Update current video file
+                if (data.video_file) {
+                    currentVideoFile = data.video_file;
+                }
+                
+                // Update status for normal monitoring
+                if (data.status === 'Normal') {
+                    document.getElementById('status').textContent = 'Status: Normal - Monitoring...';
+                    document.getElementById('status').className = 'status normal';
+                    document.getElementById('liveFeed').className = 'live-feed';
+                    
+                    // Update live stream border to green
+                    const liveStream = document.getElementById('liveVideoStream');
+                    liveStream.className = '';
+                    liveStream.style.borderColor = '#28a745';
+                }
+                
+                // Show Tier 1 simple reasoning
+                document.getElementById('currentDetails').textContent = 
+                    `Frame ${data.frame_count}: ${data.details || 'Monitoring...'}`;
+            }
+            
+            function handleAnomalyDetection(data) {
+                // Show anomaly alert
+                document.getElementById('status').textContent = 'Status: 🚨 ANOMALY DETECTED!';
+                document.getElementById('status').className = 'status anomaly';
+                document.getElementById('liveFeed').className = 'live-feed anomaly-detected';
+                
+                // Update live stream border to red
+                const liveStream = document.getElementById('liveVideoStream');
+                liveStream.className = 'anomaly-border';
+                liveStream.style.borderColor = '#ff4444';
+                
+                // Show comprehensive details
+                const tier1Details = data.tier1_result?.details || 'Tier 1 analysis unavailable';
+                const tier2Reasoning = data.tier2_result?.reasoning_summary || 'Tier 2 analysis unavailable';
+                const threatScore = ((data.tier2_result?.threat_severity_index || 0) * 100).toFixed(1);
+                
+                document.getElementById('currentDetails').innerHTML = `
+                    <strong>🔍 Tier 1 Detection:</strong> ${tier1Details}<br>
+                    <strong>🧠 AI Analysis:</strong> ${tier2Reasoning}<br>
+                    <strong>🎯 Threat Level:</strong> ${threatScore}%
+                `;
+                
+                // Add to anomalies list
+                anomalies.push(data);
+                displayAnomalies();
+            }
+            
+            function handleLegacyMessage(data) {
+                // Backward compatibility for old message format
                 if (data.video_file) {
                     currentVideoFile = data.video_file;
                 }
@@ -335,12 +399,10 @@
                     document.getElementById('status').className = 'status anomaly';
                     document.getElementById('liveFeed').className = 'live-feed anomaly-detected';
                     
-                    // Update live stream border to red
                     const liveStream = document.getElementById('liveVideoStream');
                     liveStream.className = 'anomaly-border';
                     liveStream.style.borderColor = '#ff4444';
                     
-                    // Add to anomalies list if it has frame info
                     if (data.frame_count) {
                         anomalies.push(data);
                         displayAnomalies();
@@ -350,14 +412,13 @@
                     document.getElementById('status').className = 'status normal';
                     document.getElementById('liveFeed').className = 'live-feed';
                     
-                    // Update live stream border to green
                     const liveStream = document.getElementById('liveVideoStream');
                     liveStream.className = '';
                     liveStream.style.borderColor = '#28a745';
                 }
 
                 document.getElementById('currentDetails').textContent = data.details || 'Monitoring...';
-            };
+            }
 
             ws.onclose = function(event) {
                 if (isLiveMode) {

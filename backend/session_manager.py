@@ -413,7 +413,7 @@ class SessionManager:
             audio_chunk = audio_stream.get_chunk()
             
             try:
-                # Run Tier 1
+                # Run Tier 1 continuously
                 tier1_result = run_tier1_continuous(frame, audio_chunk)
                 tier1_result.update({
                     "frame_count": frame_count,
@@ -421,23 +421,37 @@ class SessionManager:
                     "video_file": video_filename
                 })
                 
-                # Send result
-                asyncio.run(websocket.send_json(tier1_result))
+                # Always send Tier 1 result for continuous monitoring
+                tier1_message = {
+                    "type": "tier1_update",
+                    "frame_count": frame_count,
+                    "timestamp": current_timestamp, 
+                    "status": tier1_result["status"],
+                    "details": tier1_result["details"],
+                    "tier1_result": tier1_result
+                }
+                asyncio.run(websocket.send_json(tier1_message))
                 
-                # If anomaly, run Tier 2
+                # If anomaly detected, run Tier 2 and send combined anomaly event
                 if tier1_result["status"] == "Suspected Anomaly":
                     anomaly_frame_filename = f"anomaly_frames/anomaly_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{frame_count}.jpg"
                     cv2.imwrite(anomaly_frame_filename, frame)
                     
+                    # Run Tier 2 analysis
                     tier2_result = run_tier2_continuous(frame, audio_chunk, tier1_result)
-                    tier2_result.update({
+                    
+                    # Send combined anomaly data (matching upload mode format)
+                    anomaly_data = {
+                        "type": "anomaly",
                         "frame_count": frame_count,
                         "timestamp": current_timestamp,
-                        "frame_file": anomaly_frame_filename
-                    })
-                    
-                    asyncio.run(websocket.send_json(tier2_result))
-                    self.anomaly_events.append(tier2_result)
+                        "frame_file": anomaly_frame_filename,
+                        "tier1_result": tier1_result,
+                        "tier2_result": tier2_result,
+                        "anomaly_index": len(self.anomaly_events) + 1
+                    }
+                    asyncio.run(websocket.send_json(anomaly_data))
+                    self.anomaly_events.append(anomaly_data)
                     
             except Exception as e:
                 print(f"❌ Live processing error: {e}")
