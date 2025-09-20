@@ -1,0 +1,80 @@
+# Environment variables
+.env
+*.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Project-specific directories
+anomaly_frames/
+recorded_videos/
+temp_audio.mp3
+temp_audio.wav
+audio_*.wav
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Model files (optional - uncomment if models are large)
+# *.task
+# *.bin
+# *.safetensors
