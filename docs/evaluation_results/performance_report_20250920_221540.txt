@@ -1,0 +1,41 @@
+======================================================================
+TriFusion Anomaly Detection - AI Performance Evaluation Report
+======================================================================
+Evaluation Date: 2025-09-20 22:15:40
+
+EXECUTIVE SUMMARY
+------------------------------
+Overall Performance Score: 0.200
+System Grade: D
+Detection Accuracy: 0.250
+Processing Speed: 2.0 FPS
+False Positive Rate: 0.000
+
+TIER 1 (FAST DETECTION) PERFORMANCE
+------------------------------
+Accuracy: 0.250
+Precision: 0.000
+Recall: 0.000
+F1 Score: 0.000
+Average Processing Time: 0.495s
+FPS Capability: 2.0
+True Positives: 0
+True Negatives: 3
+False Positives: 0
+False Negatives: 9
+
+TIER 2 (DEEP ANALYSIS) PERFORMANCE
+------------------------------
+Average Threat Level: 0.000
+Average Confidence: 0.500
+Average Processing Time: 6.632s
+Total Anomalies Analyzed: 6
+
+RECOMMENDATIONS
+------------------------------
+- Detection accuracy below 80% - Consider model improvements
+- Processing speed below 5 FPS - Optimize performance
+- Performance needs improvement
+
+======================================================================
+End of Report
