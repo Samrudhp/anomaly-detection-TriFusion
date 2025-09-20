@@ -1,7 +1,12 @@
+import os
 import cv2
 from transformers import AutoProcessor, CLIPModel, BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
 import torch
+
+# Suppress TensorFlow and transformers verbose logging
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
 
 print("🎨 Loading OpenAI CLIP Vision Models...")
 print("   ├─ 📦 Loading CLIP-ViT-Base-Patch32...")

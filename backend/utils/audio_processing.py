@@ -1,13 +1,16 @@
+import os
 import whisper
 from moviepy.editor import VideoFileClip
 from pydub import AudioSegment
-import os
 import pyaudio
 import wave
 import time
 from collections import deque
 from threading import Thread
 from tempfile import NamedTemporaryFile
+
+# Suppress verbose logging
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 print("🎤 Loading OpenAI Whisper Speech Recognition...")
 print("   ├─ 📦 Loading Whisper Tiny model (fast)...")

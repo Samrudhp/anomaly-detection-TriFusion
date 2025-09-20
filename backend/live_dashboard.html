@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Live Monitoring - Anomaly Detection</title>
+    <title>SmartCare AI - Live Safety Monitoring</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            background-color: #f5f5f5;
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3a 50%, #0f1419 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
         }
         .container { 
             max-width: 1200px; 
             margin: 0 auto; 
-            background: white;
+            background: rgba(26, 29, 58, 0.95);
+            border: 1px solid #00d4aa;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+            backdrop-filter: blur(10px);
         }
         
         /* Header */
@@ -24,11 +29,19 @@
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #007bff;
+            border-bottom: 2px solid #00d4aa;
         }
         .header h1 {
-            color: #007bff;
+            color: #00d4aa;
             margin: 0;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+            letter-spacing: 2px;
+        }
+        .header p {
+            color: #88c999;
+            margin: 10px 0 0 0;
+            font-size: 1.1em;
         }
         
         /* Mode Switch */
@@ -36,76 +49,113 @@
             text-align: center;
             margin-bottom: 20px;
             padding: 15px;
-            background: #e9ecef;
+            background: rgba(15, 20, 25, 0.8);
+            border: 1px solid #00d4aa;
             border-radius: 8px;
         }
         .mode-switch a {
             text-decoration: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             margin: 0 10px;
             border-radius: 5px;
-            background: #007bff;
-            color: white;
-            transition: background 0.3s;
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid #00d4aa;
+            color: #00d4aa;
+            transition: all 0.3s;
+            font-weight: bold;
         }
         .mode-switch a:hover {
-            background: #0056b3;
+            background: rgba(0, 212, 170, 0.2);
+            box-shadow: 0 0 15px rgba(0, 212, 170, 0.4);
         }
         .mode-switch .current {
-            background: #28a745;
+            background: #00d4aa;
+            color: #0a0e27;
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.6);
         }
         
         /* Mode Conflict Warning */
         .mode-conflict {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
             padding: 15px;
             border-radius: 8px;
             margin: 15px 0;
             text-align: center;
         }
         .mode-conflict button {
-            background: #dc3545;
-            color: white;
-            border: none;
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
         }
         .mode-conflict button:hover {
-            background: #c82333;
+            background: #ff6b6b;
+            color: #0a0e27;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
         .video-section { margin-bottom: 20px; }
         .anomaly-list { margin-top: 20px; }
         .anomaly-item { 
-            border: 1px solid #ddd; 
+            border: 1px solid #00d4aa; 
             padding: 15px; 
             margin: 10px 0; 
             border-radius: 5px;
-            background: #f9f9f9;
+            background: rgba(15, 20, 25, 0.8);
+            color: #00d4aa;
         }
-        .anomaly-item.high-threat { border-left: 5px solid #ff4444; }
-        .anomaly-item.medium-threat { border-left: 5px solid #ffaa44; }
-        .anomaly-item.low-threat { border-left: 5px solid #44ff44; }
+        .anomaly-item.high-threat { border-left: 5px solid #ff6b6b; }
+        .anomaly-item.medium-threat { border-left: 5px solid #ffa502; }
+        .anomaly-item.low-threat { border-left: 5px solid #88c999; }
         .anomaly-frame { max-width: 300px; margin: 10px 0; }
         .status { 
-            padding: 10px; 
-            margin: 10px 0; 
-            border-radius: 5px; 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
             font-weight: bold;
+            border: 1px solid;
         }
-        .status.normal { background: #d4edda; color: #155724; }
-        .status.anomaly { background: #f8d7da; color: #721c24; }
+        .status.normal { 
+            background: rgba(136, 201, 153, 0.1); 
+            color: #88c999; 
+            border-color: #88c999;
+        }
+        .status.anomaly { 
+            background: rgba(255, 107, 107, 0.1); 
+            color: #ff6b6b; 
+            border-color: #ff6b6b;
+            animation: pulse-alert 2s infinite;
+        }
+        @keyframes pulse-alert {
+            0% { box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(255, 107, 107, 0.6); }
+            100% { box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
+        }
         .live-feed { 
-            border: 2px solid #ddd; 
+            border: 2px solid #00d4aa; 
             padding: 20px; 
             border-radius: 10px; 
             margin-bottom: 20px;
+            background: rgba(15, 20, 25, 0.6);
         }
-        .live-feed.anomaly-detected { border-color: #ff4444; background: #ffe6e6; }
+        .live-feed h2 {
+            color: #00d4aa;
+        }
+        .live-feed #currentDetails {
+            color: #b0b0b0;
+        }
+        .live-feed.anomaly-detected { 
+            border-color: #ff6b6b; 
+            background: rgba(255, 107, 107, 0.1);
+            animation: pulse-alert 2s infinite;
+        }
         .video-container { 
             text-align: center; 
             margin: 15px 0; 
@@ -116,30 +166,36 @@
             transition: border-color 0.3s ease;
         }
         #liveVideoStream.anomaly-border { 
-            border-color: #ff4444 !important; 
-            box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+            border-color: #ff6b6b !important; 
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
         }
         .stream-controls { 
             text-align: center; 
             margin-top: 15px; 
         }
         button { 
-            background: #007bff; 
-            color: white; 
-            border: none; 
-            padding: 10px 20px; 
+            background: rgba(0, 212, 170, 0.2); 
+            border: 1px solid #00d4aa;
+            color: #00d4aa; 
+            padding: 12px 24px; 
             border-radius: 5px; 
             cursor: pointer; 
             margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
         }
-        button:hover { background: #0056b3; }
+        button:hover { 
+            background: #00d4aa; 
+            color: #0a0e27;
+            box-shadow: 0 0 15px rgba(0, 212, 170, 0.5);
+        }
         .video-controls { margin: 10px 0; }
         #videoPlayer { width: 100%; max-width: 600px; }
         
         /* JSON Output Styles */
         .json-output {
-            background: #1e1e1e;
-            color: #f8f8f2;
+            background: rgba(10, 14, 39, 0.95);
+            color: #00d4aa;
             padding: 15px;
             border-radius: 5px;
             font-family: 'Courier New', monospace;
@@ -148,18 +204,37 @@
             overflow-y: auto;
             white-space: pre-wrap;
             margin: 10px 0;
-            border: 1px solid #444;
+            border: 1px solid #00d4aa;
         }
         .json-section {
             margin: 20px 0;
             padding: 15px;
-            background: #f8f9fa;
+            background: rgba(15, 20, 25, 0.8);
+            border: 1px solid #00d4aa;
             border-radius: 8px;
-            border: 1px solid #dee2e6;
         }
         .json-toggle {
-            background: #28a745;
+            background: rgba(136, 201, 153, 0.2);
+            border-color: #88c999;
+            color: #88c999;
             margin-bottom: 10px;
+        }
+        
+        /* Additional text visibility improvements */
+        h1, h2, h3, h4, h5, h6 {
+            color: #00d4aa;
+        }
+        p {
+            color: #e0e0e0;
+        }
+        strong {
+            color: #ffffff;
+        }
+        .container p {
+            color: #b0b0b0;
+        }
+        .container strong {
+            color: #ffffff;
         }
     </style>
 </head>
@@ -167,45 +242,46 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎥 Live Monitoring Dashboard</h1>
-            <p>Real-time video stream analysis and anomaly detection</p>
+            <h1>🛡️ SmartCare AI – Multimodal Safety Monitoring</h1>
+            <p>Designed for real-time safety in homes, clinics, and family care environments</p>
         </div>
         
         <!-- Mode Switch -->
         <div class="mode-switch">
-            <a href="/dashboard/live" class="current">🎥 Live Monitoring</a>
-            <a href="/dashboard/upload">📁 Upload Analysis</a>
+            <a href="/dashboard/live" class="current">🎥 Live Safety Monitoring</a>
+            <a href="/dashboard/upload">📁 Care Review (Upload & Analyze)</a>
         </div>
         
         <!-- Mode Conflict Warning -->
         <div id="modeConflict" class="mode-conflict" style="display: none;">
-            <strong>⚠️ Upload processing is currently active!</strong><br>
-            You need to stop the upload processing to start live monitoring.
+            <strong>⚠️ Care review processing is currently active!</strong><br>
+            You need to stop the upload processing to start live safety monitoring.
             <br>
             <button onclick="forceStopUpload()">Force Stop Upload</button>
             <button onclick="window.location.reload()">Refresh Status</button>
         </div>
         
-        <h1>🛡️ Real-time Anomaly Detection System</h1>
+        <h1>🛡️ Real-time Family Safety Detection System</h1>
         
         <div class="live-feed" id="liveFeed">
-            <h2>Live Video Stream</h2>
-            <div id="status" class="status normal">Status: Normal</div>
-            <div id="currentDetails">Monitoring for anomalies...</div>
+            <h2>Live Safety Monitoring Stream</h2>
+            <div id="status" class="status normal">Status: Normal - No Safety Concerns</div>
+            <div id="currentDetails">Monitoring for safety incidents...</div>
             <div class="video-container">
-                <img id="liveVideoStream" src="/video_stream" alt="Live Video Stream" style="width: 100%; max-width: 640px; border: 3px solid #28a745; border-radius: 8px;">
+                <img id="liveVideoStream" src="/video_stream" alt="Live Safety Stream" style="width: 100%; max-width: 640px; border: 3px solid #00d4aa; border-radius: 8px;">
             </div>
             <div class="stream-controls">
-                <button onclick="startLiveMonitoring()">🚀 Start Live Monitoring</button>
+                <button onclick="startLiveMonitoring()">🚀 Start Safety Monitoring</button>
                 <button onclick="stopLiveMonitoring()">🛑 Stop Monitoring</button>
                 <button onclick="toggleStreamDisplay()">👁️ Toggle Stream Display</button>
             </div>
         </div>
 
         <div class="json-section">
-            <h2>📊 Real-time JSON Data</h2>
+            <h2>📊 Real-time Care Monitoring Data</h2>
             <button class="json-toggle" onclick="toggleJsonDisplay()">Show/Hide JSON Output</button>
             <div id="jsonOutput" class="json-output" style="display: none;">
+                <strong>Context:</strong> Elder Care Monitoring<br>
                 Waiting for data...
             </div>
         </div>
@@ -214,7 +290,7 @@
             <h2>📹 Video Playback</h2>
             <div class="video-controls">
                 <button onclick="loadLatestVideo()">Load Latest Recording</button>
-                <button onclick="jumpToAnomaly()">Jump to Last Anomaly</button>
+                <button onclick="jumpToAnomaly()">Jump to Last Safety Alert</button>
             </div>
             <video id="videoPlayer" controls style="display:none;">
                 Your browser does not support the video tag.
@@ -222,7 +298,7 @@
         </div>
 
         <div class="anomaly-list">
-            <h2>🚨 Detected Anomalies</h2>
+            <h2>⚠️ Detected Safety Alerts</h2>
             <button onclick="refreshAnomalies()">Refresh List</button>
             <div id="anomalyList">No anomalies detected yet.</div>
         </div>
@@ -317,8 +393,12 @@
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 
-                // Display detailed JSON output
-                document.getElementById('jsonOutput').textContent = JSON.stringify(data, null, 2);
+                // Display detailed JSON output with context
+                const displayData = { 
+                    context: "Elder Care Monitoring",
+                    ...data 
+                };
+                document.getElementById('jsonOutput').textContent = JSON.stringify(displayData, null, 2);
                 
                 if (data.error) {
                     document.getElementById('currentDetails').textContent = 'Error: ' + data.error;
@@ -363,7 +443,7 @@
             
             function handleAnomalyDetection(data) {
                 // Show anomaly alert
-                document.getElementById('status').textContent = 'Status: 🚨 ANOMALY DETECTED!';
+                document.getElementById('status').textContent = 'Status: ⚠️ Safety Alert: Unusual activity detected (possible fall)';
                 document.getElementById('status').className = 'status anomaly';
                 document.getElementById('liveFeed').className = 'live-feed anomaly-detected';
                 
@@ -395,7 +475,7 @@
                 }
 
                 if (data.status === 'Suspected Anomaly') {
-                    document.getElementById('status').textContent = 'Status: 🚨 ANOMALY DETECTED!';
+                    document.getElementById('status').textContent = 'Status: ⚠️ Safety Alert: Unusual activity detected (possible fall)';
                     document.getElementById('status').className = 'status anomaly';
                     document.getElementById('liveFeed').className = 'live-feed anomaly-detected';
                     

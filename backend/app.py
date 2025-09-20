@@ -1,16 +1,45 @@
+# Set logging environment variables before any imports
+import os
+import sys
+import logging
+
+# Comprehensive logging suppression
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress all TensorFlow logs except errors
+os.environ['GLOG_minloglevel'] = '3'      # Suppress GLOG info/warning logs  
+os.environ['GLOG_logtostderr'] = '0'      # Don't log to stderr
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # Disable oneDNN optimizations logs
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "ERROR"
+os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
+os.environ['ABSL_STDERRTHRESHOLD'] = '3'  # Suppress ABSL logs
+
+# Redirect stderr to suppress MediaPipe warnings
+class SuppressStderr:
+    def __enter__(self):
+        self._original_stderr = sys.stderr
+        sys.stderr = open(os.devnull, 'w')
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stderr.close()
+        sys.stderr = self._original_stderr
+
+# Configure Python logging to suppress INFO/WARNING
+logging.getLogger().setLevel(logging.ERROR)
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+logging.getLogger('absl').setLevel(logging.ERROR)
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from session_manager import session_manager
-import os
 import warnings
 from datetime import datetime
 from typing import Dict, Any
 
-# Suppress various warnings and set environment variables
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "ERROR"  # Reduce OpenCV FFmpeg warnings
+# Suppress various warnings
 warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 def print_startup_banner():
     """Print beautiful startup banner"""
@@ -18,6 +47,13 @@ def print_startup_banner():
     print("█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█")
     print("█                                                                              █")
     print("█                    🤖 GenAI-Powered Anomaly Detection System                 █")
+    print("█                    🛡️ SmartCare AI - Family Safety Monitoring               █")
+    print("█                                                                              █")
+    print("█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█")
+    print("="*80)
+    print("🔧 Initializing FastAPI server...")
+    print("🤫 Verbose model logging suppressed for clean output")
+    print("🧠 Loading AI models...")
     print("█                                                                              █")
     print("█                           🧠 Two-Tier AI Architecture                        █")
     print("█                                                                              █")

@@ -1,9 +1,27 @@
 
+import os
+import sys
 import cv2
 import mediapipe as mp
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision as mp_vision
 import numpy as np
+
+# Suppress TensorFlow and MediaPipe verbose logging
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TF info/warning logs
+os.environ['GLOG_minloglevel'] = '3'  # Suppress GLOG info/warning logs
+os.environ['ABSL_STDERRTHRESHOLD'] = '3'  # Suppress ABSL logs
+
+# Context manager to suppress stderr during model loading
+class SuppressStderr:
+    def __enter__(self):
+        self._original_stderr = sys.stderr
+        sys.stderr = open(os.devnull, 'w')
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stderr.close()
+        sys.stderr = self._original_stderr
 
 print("🎯 Loading MediaPipe Pose Detection...")
 print("   └─ 📦 Loading pose_landmarker_heavy.task...")
@@ -13,11 +31,15 @@ BaseOptions = mp_tasks.BaseOptions
 PoseLandmarker = mp_vision.PoseLandmarker
 PoseLandmarkerOptions = mp_vision.PoseLandmarkerOptions
 VisionRunningMode = mp_vision.RunningMode
-options = PoseLandmarkerOptions(
-    base_options=BaseOptions(model_asset_path=MODEL_PATH),
-    running_mode=VisionRunningMode.VIDEO
-)
-landmarker = PoseLandmarker.create_from_options(options)
+
+# Load model with stderr suppression
+with SuppressStderr():
+    options = PoseLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=MODEL_PATH),
+        running_mode=VisionRunningMode.VIDEO
+    )
+    landmarker = PoseLandmarker.create_from_options(options)
+
 print("      ✅ MediaPipe Pose Landmarker loaded")
 print("🎯 Pose Detection Ready!\n")
 

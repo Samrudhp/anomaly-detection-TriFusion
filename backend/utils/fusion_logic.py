@@ -4,7 +4,14 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()  # Load variables from .env file
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Test Groq client initialization
+try:
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    print("✅ Groq client initialized successfully")
+except Exception as e:
+    print(f"❌ Failed to initialize Groq client: {e}")
+    groq_client = None
 
 
 
@@ -101,14 +108,25 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
         )
         
         print("🤖 Sending data to Groq LLM (llama-3.3-70b-versatile)...")
+        print(f"🔑 API Key Status: {'Present' if os.getenv('GROQ_API_KEY') else 'Missing'}")
         
-        response = groq_client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
-            temperature=0.1  # Lower temperature for more consistent JSON output
-        )
+        if groq_client is None:
+            raise Exception("Groq client not initialized - check API key and connection")
+        
+        try:
+            response = groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama-3.3-70b-versatile",
+                temperature=0.1  # Lower temperature for more consistent JSON output
+            )
+            print("📡 Groq API call successful")
+        except Exception as api_error:
+            print(f"📡 Groq API call failed: {type(api_error).__name__}: {api_error}")
+            raise api_error
+            
         output = response.choices[0].message.content.strip()
         print("📨 Received LLM response, processing...")
+        print(f"📄 Response preview: {output[:100]}...")  # Show first 100 chars
         
         # Clean up the response to extract JSON
         if "```json" in output:
@@ -160,29 +178,54 @@ def tier2_fusion(audio_transcript, captions, visual_anomaly_max, tier1_details):
     except json.JSONDecodeError as e:
         print(f"❌ JSON decode error in Tier 2: {e}")
         print(f"📄 Raw LLM output: {output}")
+        print(f"🔍 Debug - Output length: {len(output) if 'output' in locals() else 'undefined'}")
     except Exception as e:
-        print(f"❌ Error in Tier 2 fusion: {e}")
+        print(f"❌ Error in Tier 2 fusion: {type(e).__name__}: {e}")
+        print(f"🔑 Groq API key present: {'Yes' if os.getenv('GROQ_API_KEY') else 'No'}")
+        
+        # Check for rate limiting specifically
+        if "rate_limit_exceeded" in str(e) or "Rate limit reached" in str(e):
+            print("⚠️  RATE LIMIT EXCEEDED - Groq API daily token limit reached!")
+            print("💡 Solutions:")
+            print("   1. Wait for rate limit reset (usually daily)")
+            print("   2. Upgrade to Groq Pro tier for higher limits")
+            print("   3. Using fallback analysis for now...")
+        elif "Error code: 429" in str(e):
+            print("⚠️  GROQ API RATE LIMITED - Too many requests")
+            print("💡 Using fallback analysis until rate limit resets...")
+        
+        if hasattr(e, 'response'):
+            print(f"📡 API Response: {e.response}")
+        import traceback
+        print(f"📋 Full traceback: {traceback.format_exc()}")
     
     # Enhanced fallback with actual data-based scoring
     fallback_visual_score = min(1.0, visual_anomaly_max * 2)  # Scale up the visual score
     fallback_audio_score = 0.3 if audio_transcript and len(audio_transcript.strip()) > 0 else 0.1
     fallback_threat = (fallback_visual_score + fallback_audio_score) / 2
     
-    print("⚠️  USING FALLBACK ANALYSIS")
+    print("⚠️  USING FALLBACK ANALYSIS (Groq API Unavailable)")
     print("-"*70)
+    
+    # Determine fallback reasoning based on available data
+    if "rate_limit" in str(e).lower():
+        reasoning = f"Rate limit reached - using local analysis. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
+    else:
+        reasoning = f"AI reasoning unavailable - using fallback. Visual anomaly: {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}"
     
     result = {
         "visual_score": fallback_visual_score,
         "audio_score": fallback_audio_score,
         "text_alignment_score": 0.4,
         "multimodal_agreement": 0.4,
-        "reasoning_summary": f"Fallback analysis: Visual anomaly {visual_anomaly_max:.2f}, Audio available: {bool(audio_transcript)}",
+        "reasoning_summary": reasoning,
         "threat_severity_index": fallback_threat
     }
     
     print(f"🎯 Fallback Threat: {fallback_threat:.1%}")
     print(f"👁️  Visual Score: {fallback_visual_score:.1%}")
     print(f"🎤 Audio Score: {fallback_audio_score:.1%}")
+    print("💡 Note: Upgrade Groq API tier for full AI reasoning")
     print("="*70 + "\n")
     
     return result
