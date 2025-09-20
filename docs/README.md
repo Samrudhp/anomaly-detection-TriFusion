@@ -69,6 +69,59 @@ graph TD
 
 ### Installation
 
+#### For Windows Users (Recommended)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Samrudhp/anomaly-detection-TriFusion.git
+   cd anomaly-detection-TriFusion
+   ```
+
+2. **Create virtual environment**
+   ```bash
+   cd backend
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+3. **Install PyTorch first (Windows fix for DLL issues)**
+   ```bash
+   # Install PyTorch with CUDA support (recommended)
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+   
+   # OR for CPU-only version if no CUDA
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+   ```
+
+4. **Install remaining dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Install Windows-specific audio dependencies**
+   ```bash
+   # Install Visual C++ redistributables if needed
+   pip install pipwin
+   pipwin install pyaudio
+   ```
+
+6. **Setup environment variables**
+   Create a `.env` file in the backend directory:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+
+7. **Download MediaPipe model**
+   Ensure `pose_landmarker_heavy.task` is in the backend directory (should be included)
+
+8. **Create required directories**
+   ```bash
+   mkdir anomaly_frames
+   mkdir recorded_videos
+   ```
+
+#### For Linux/macOS Users
+
 1. **Clone the repository**
    ```bash
    git clone https://github.com/Samrudhp/anomaly-detection-TriFusion.git
@@ -384,7 +437,53 @@ SCENE_ANOMALY_THRESHOLD=0.20
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### Windows-Specific Issues
+
+1. **PyTorch DLL Error (fbgemm.dll not found)**
+   ```bash
+   # Uninstall current PyTorch
+   pip uninstall torch torchvision torchaudio -y
+   
+   # Reinstall with proper Windows support
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+   
+   # Or for CPU-only:
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+   
+   # Install Visual C++ Redistributables if still failing
+   # Download from: https://aka.ms/vs/17/release/vc_redist.x64.exe
+   ```
+
+2. **PyAudio installation fails on Windows**
+   ```bash
+   # Method 1: Use pipwin
+   pip install pipwin
+   pipwin install pyaudio
+   
+   # Method 2: Use pre-compiled wheel
+   pip install https://download.lfd.uci.edu/pythonlibs/archived/pyaudio-0.2.11-cp39-cp39-win_amd64.whl
+   
+   # Method 3: Install Visual Studio Build Tools
+   # Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+   ```
+
+3. **MediaPipe model loading errors**
+   ```bash
+   # Ensure the model file exists in backend directory
+   ls pose_landmarker_heavy.task
+   
+   # If missing, download from MediaPipe
+   # The file should be included in the repository
+   ```
+
+4. **Camera access denied**
+   ```bash
+   # Check Windows privacy settings
+   # Settings > Privacy & Security > Camera
+   # Enable "Allow apps to access your camera"
+   ```
+
+### Common Issues (All Platforms)
 
 1. **Camera not detected**
    ```bash
@@ -410,6 +509,26 @@ SCENE_ANOMALY_THRESHOLD=0.20
    ```bash
    # Verify GROQ_API_KEY in .env file
    # Check internet connection for API access
+   ```
+
+5. **Import errors or missing dependencies**
+   ```bash
+   # Ensure you're in the virtual environment
+   # Windows: venv\Scripts\activate
+   # Linux/macOS: source venv/bin/activate
+   
+   # Reinstall dependencies
+   pip install -r requirements.txt
+   ```
+
+6. **Port already in use error**
+   ```bash
+   # Use a different port
+   uvicorn app:app --host 0.0.0.0 --port 8001 --reload
+   
+   # Or kill the process using port 8000
+   # Windows: netstat -ano | findstr :8000
+   # Linux/macOS: lsof -ti:8000 | xargs kill
    ```
 
 ### Performance Optimization
