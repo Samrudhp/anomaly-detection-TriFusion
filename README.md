@@ -16,23 +16,25 @@
 - **Technology**: Multimodal AI Fusion (Vision + Audio + Pose Detection)
 
 ---
+## 👥 Team Members
 
-
-## 📁 Project Resources
-
-🔗 **Google Drive - Project Assets & Documentation**  
-[Access TriFusion Project Resources](https://drive.google.com/drive/folders/1tk_Rn3My9xKM7dwIPjQ4TyI2oHMHlwuw?usp=sharing)
-
-*This folder contains additional project assets, demo videos, presentation materials, and supplementary documentation.*
+| Name | Email | 
+|------|-------|
+| **Samrudh P** | 1ms23cs162@msrit.edu | 
+| **Sagar S R** | 1ms23cs158@msrit.edu | 
+| **Ranjita V Nayak** | 1ms23cs150@msrit.edu | 
 
 ---
 
+
+
 ## 📁 Project Resources
 
 🔗 **Google Drive - Project Assets & Documentation**  
 [Access TriFusion Project Resources](https://drive.google.com/drive/folders/1tk_Rn3My9xKM7dwIPjQ4TyI2oHMHlwuw?usp=sharing)
 
 *This folder contains additional project assets, demo videos, presentation materials, and supplementary documentation.*
+*Use demo videos to test *
 
 ---
 
