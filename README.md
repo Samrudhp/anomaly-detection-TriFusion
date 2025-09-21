@@ -25,6 +25,9 @@
 | **Ranjita V Nayak** | 1ms23cs150@msrit.edu | 
 
 ---
+### Submissions
+ ## The demo video
+[The demo video](https://drive.google.com/file/d/19EPsWz1cJajohpxkTi2Z5H1Yrt7QgNIh/view?usp=sharing)
 
 ## Idea presentation ppt
 

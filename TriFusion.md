@@ -20,3 +20,12 @@
 **Project Overview:**
 TriFusion is a multimodal AI platform for family safety monitoring using Samsung SmartThings. It features two-tier AI architecture with real-time detection and deep reasoning, achieving 91% accuracy in anomaly detection.
 
+**Documentation** 
+
+- check docs folder for complete documentation
+
+- The demo video link is present in readme
+
+- The pptx link present in readme
+
+
