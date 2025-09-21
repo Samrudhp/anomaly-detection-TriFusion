@@ -26,6 +26,9 @@
 
 ---
 
+## Idea presentation ppt
+
+[Access pptx here](https://docs.google.com/presentation/d/10DDa-6er-2CfxCMq0oD0xzdKwN8nJvGnvk0svQkY6Vo/edit?usp=sharing)
 
 
 ## 📁 Project Resources
