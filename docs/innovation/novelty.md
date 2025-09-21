@@ -2,7 +2,7 @@
 
 ## The TriFusion Breakthrough
 
-TriFusion represents a fundamental advancement in AI-powered safety monitoring, combining **multimodal fusion intelligence** with **two-tier processing architecture** in ways that no other system has achieved. This isn't just an incremental improvement—it's a complete reimagining of how AI can protect families.
+TriFusion represents a fundamental advancement in GenAI-powered safety monitoring, combining **multimodal fusion intelligence** with **two-tier processing architecture** in ways that no other system has achieved. This isn't just an incremental improvement—it's a complete reimagining of how AI can protect families.
 
 ---
 

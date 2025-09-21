@@ -2,7 +2,7 @@
 
 ## Samsung PRISM GenAI Hackathon 2025
 
-**🤖 GenAI Powered Anomaly Detection System** 
+**🤖 GenAI-Powered MultiModal Anomaly Detection System for Family Safety & Elder Care with Neurosymbolic reasoning** 
 
 **🏠 Smart Home Integration**
 

@@ -130,8 +130,8 @@ async def upload_dashboard():
     return FileResponse("upload_dashboard.html")
 
 @app.get("/dashboard")
-async def default_dashboard():
-    """Redirect to upload dashboard by default"""
+async def upload_dashboard():
+    """Serve the upload processing dashboard"""
     return FileResponse("upload_dashboard.html")
 
 # ==================== SESSION MANAGEMENT API ====================
@@ -352,18 +352,32 @@ def create_placeholder_frame(message: str):
 
 @app.get("/")
 async def root():
-    """API root endpoint"""
+    """Redirect to dashboard for web users, API info for programmatic access"""
+    from fastapi.responses import RedirectResponse
+    from fastapi.requests import Request
+
+    # For now, let's redirect to dashboard
+    # If you want API info, you can access /api/info
+    return RedirectResponse(url="/dashboard/upload", status_code=302)
+
+@app.get("/api/info")
+async def api_info():
+    """API information endpoint for programmatic access"""
     status = session_manager.get_status()
     return {
-        "message": "Anomaly Detection System API v2.0",
+        "welcome": "Welcome to TriFusion - GenAI Powered Anomaly Detection System",
+        "message": "🛡️ SmartCare AI - Family Safety Monitoring Platform v2.0",
+        "description": "Revolutionary multimodal AI for elderly care and family safety monitoring",
         "session_status": status,
         "endpoints": {
+            "dashboard": "/dashboard",
             "live_dashboard": "/dashboard/live",
-            "upload_dashboard": "/dashboard/upload", 
-            "session_status": "/api/session/status",
-            "stop_live": "/api/session/stop-live",
-            "force_stop": "/api/session/force-stop",
-            "upload_video": "/api/upload",
-            "anomalies": "/api/anomalies"
-        }
+            "upload_dashboard": "/dashboard/upload",
+        },
+        "features": [
+            "Real-time anomaly detection",
+            "Multimodal AI fusion (Vision + Audio + Pose)",
+            "Two-tier AI architecture",
+            "Privacy-first local processing"
+        ]
     }

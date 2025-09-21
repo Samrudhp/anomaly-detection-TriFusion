@@ -2,7 +2,7 @@
 
 ## System Overview
 
-TriFusion is a production-ready multimodal AI safety monitoring platform built with enterprise-grade architecture, comprehensive error handling, and scalable design. This document provides complete technical specifications for evaluation and integration.
+TriFusion is a production-ready multimodal GenAI safety monitoring platform built with enterprise-grade architecture, comprehensive error handling, and scalable design. This document provides complete technical specifications for evaluation and integration.
 
 ---
 
