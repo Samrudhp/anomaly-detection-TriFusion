@@ -1,5 +1,7 @@
 # 🛡️ TriFusion Family Care AI
 
+## TriFusion_MSRIT_1_SamrudhP
+
 ## Samsung PRISM GenAI Hackathon 2025
 
 **🤖 GenAI-Powered MultiModal Anomaly Detection System for Family Safety & Elder Care with Neurosymbolic reasoning** 
