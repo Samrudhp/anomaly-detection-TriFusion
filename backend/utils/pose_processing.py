@@ -26,7 +26,9 @@ class SuppressStderr:
 print("🎯 Loading MediaPipe Pose Detection...")
 print("   └─ 📦 Loading pose_landmarker_heavy.task...")
 
-MODEL_PATH = "pose_landmarker_heavy.task"
+# Get the absolute path to the model file
+import os
+MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pose_landmarker_heavy.task")
 BaseOptions = mp_tasks.BaseOptions
 PoseLandmarker = mp_vision.PoseLandmarker
 PoseLandmarkerOptions = mp_vision.PoseLandmarkerOptions
