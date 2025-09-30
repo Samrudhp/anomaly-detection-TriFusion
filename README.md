@@ -52,14 +52,15 @@
 
 **🎯 Samsung PRISM GenAI 2025 Special Features:** 
 - **Check out the Inference folder to run quick jupyter notebook**
--- or 
--- for quick instead of ui/ux use these below command (process video present in inference folder automatically and generate report)
+- or 
+- for quick instead of ui/ux use these below command (process video present in inference folder automatically and generate report)
 
  ```
  cd inference
  python batch_processor.py
- 
+
  ```
+ - ## Else run from backend and open dashboard (follow docs to run dashboard)for detailed experience
 
 - **Dedicated Inference Pipeline**: Professional evaluation tools for Samsung judges
 - **10x Performance Optimizations**: Real-time processing capability demonstrated
