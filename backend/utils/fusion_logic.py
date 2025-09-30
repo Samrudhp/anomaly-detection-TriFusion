@@ -37,17 +37,17 @@ def tier1_fusion(pose_summary, audio_summary, scene_summary):
     pose_anomaly_detected = "True" in pose_summary
     print(f"🤸 Pose Analysis: {'🚨 ANOMALY' if pose_anomaly_detected else '✅ NORMAL'}")
     
-    # Very sensitive thresholds to catch visual anomalies better
+    # Optimized thresholds for Samsung demo - reduced false positives
     if pose_anomaly_detected:
-        scene_threshold = 0.15  # Lower threshold when pose anomaly is detected
+        scene_threshold = 0.35  # Higher threshold when pose anomaly is detected
     else:
-        scene_threshold = 0.20  # Much lower threshold for scene-only anomalies
+        scene_threshold = 0.45  # Higher threshold for scene-only anomalies - Samsung optimized
     
     moderate_scene_anomaly = scene_prob > scene_threshold
     print(f"🎬 Scene Threshold: {scene_threshold} | Scene Score: {scene_prob:.3f} | Result: {'🚨 ANOMALY' if moderate_scene_anomaly else '✅ NORMAL'}")
     
-    # Quick decisions without AI reasoning - but be more lenient
-    if not pose_anomaly_detected and scene_prob < 0.10:  # Only skip if very low scene probability
+    # Quick decisions without AI reasoning - Samsung demo optimized
+    if not pose_anomaly_detected and scene_prob < 0.20:  # Skip more frames for better performance (Samsung optimized)
         print("✅ TIER 1 RESULT: NORMAL - Low threat indicators")
         print("="*60 + "\n")
         return "Normal", f"Scene probability ({scene_prob:.2f}) and pose analysis indicate normal activity"

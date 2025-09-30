@@ -146,11 +146,11 @@ def process_scene_frame(image_array):
     anomaly_ratio = anomaly_prob.item() / (normal_prob.item() + 1e-6)  # Add small epsilon to avoid division by zero
     
     # Return anomaly probability if the ratio indicates potential concern
-    # Even small anomaly signals should be considered in safety monitoring
-    result = anomaly_prob.item() if anomaly_ratio > 0.15 else 0.0  # If anomaly is >15% of normal strength
+    # Samsung Demo: Higher threshold for better precision and speed
+    result = anomaly_prob.item() if anomaly_ratio > 0.30 else 0.0  # If anomaly is >30% of normal strength (Samsung optimized)
     
     # Debug logging to see what's happening
-    print(f"🎬 Scene Debug: normal_prob={normal_prob:.3f}, anomaly_prob={anomaly_prob:.3f}, ratio={anomaly_ratio:.3f}, threshold=0.15, result={result:.3f}")
+    print(f"🎬 Scene Debug: normal_prob={normal_prob:.3f}, anomaly_prob={anomaly_prob:.3f}, ratio={anomaly_ratio:.3f}, threshold=0.30, result={result:.3f}")
     
     return result
 
