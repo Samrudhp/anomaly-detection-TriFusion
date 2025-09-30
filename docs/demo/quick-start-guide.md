@@ -289,6 +289,44 @@ Audio detected: "help"
 📊 Confidence: 94%
 ```
 
+
+- # or
+
+## 🚀 Quick Start
+
+### For Samsung Judges (Ultra Simple)
+
+```bash
+# Clone and setup
+git clone https://github.com/Samrudhp/anomaly-2.git
+cd anomaly-2
+
+# Install dependencies  
+pip install -r backend/requirements.txt
+
+# Samsung evaluation (2 commands total)
+cd inference
+python batch_processor.py
+# Done! Check output/ and reports/ folders
+```
+
+#### **Quick Samsung Evaluation Workflow:**
+```bash
+# 1. Navigate to inference folder
+cd inference
+
+# 2. Place test videos in input folder
+cp your_test_video.mp4 input/
+
+# 3. Run Samsung demo (choose one):
+
+python batch_processor.py           # Automated processing
+
+# 4. Review professional reports
+open reports/samsung_dashboard_*.html
+```
+
+
 ### 4.4 Results Display
 **Complete analysis results**
 
@@ -445,37 +483,6 @@ deactivate
 - ✅ **Error Handling**: Graceful fallbacks and clear user feedback
 - ✅ **Privacy Compliance**: Local processing, no data leakage
 
----
-
-## 🔧 Troubleshooting Common Issues
-
-### Issue: Camera/Microphone Permissions
-**Symptom:** Black video feed or no audio
-**Solution:**
-- Refresh the page and re-grant permissions
-- Check browser settings for camera/microphone access
-- Try a different browser (Chrome recommended)
-
-### Issue: Models Not Loading
-**Symptom:** "AI Models Loading..." stuck
-**Solution:**
-- Check internet connection for model downloads
-- Verify sufficient disk space (>5GB free)
-- Restart the server and try again
-
-### Issue: High CPU/Memory Usage
-**Symptom:** System running slow
-**Solution:**
-- Close other applications
-- Reduce video quality in settings
-- Check GPU availability (if applicable)
-
-### Issue: API Connection Failed
-**Symptom:** Tier 2 analysis shows fallback messages
-**Solution:**
-- Verify GROQ_API_KEY in .env file
-- Check internet connection
-- System continues with local analysis as fallback
 
 ---
 
@@ -519,26 +526,8 @@ deactivate
 
 ---
 
-## 🎯 Next Steps for Samsung Evaluation
-
-### Immediate Actions
-1. **Run the complete demo** following this guide
-2. **Test edge cases** (network issues, hardware limitations)
-3. **Review the code** for production quality assessment
-4. **Evaluate integration potential** with SmartThings ecosystem
-
-### Technical Deep Dive
-1. **Architecture Review**: Examine two-tier system design
-2. **AI Model Analysis**: Assess multimodal fusion implementation
-3. **Performance Testing**: Load testing and scalability analysis
-4. **Security Audit**: Privacy and data protection evaluation
-
-### Business Assessment
-1. **Market Opportunity**: $50B+ elder care industry analysis
-2. **Competitive Landscape**: Positioning vs. Apple/Google/Amazon
-3. **Revenue Model**: Subscription and enterprise pricing viability
-4. **Integration Strategy**: SmartThings Family Care enhancement plan
-
----
-
 **This demo guide provides everything needed to experience TriFusion's full capabilities and understand its potential as Samsung's family safety AI platform.**
+
+
+
+

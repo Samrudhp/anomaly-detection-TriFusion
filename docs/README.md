@@ -26,20 +26,29 @@
 
 ---
 
-## 🎯 **Samsung Evaluation Tools - Inference Pipeline**
+## 🎯 **Samsung Evaluation - Ultra Simple**
 
-### 📁 **Professional Inference Folder**
+### 📁 **One-Command Batch Processing**
 
-We've created a **dedicated inference directory** for Samsung PRISM GenAI 2025 evaluation that provides professional tools for judges to assess TriFusion's capabilities:
+For Samsung judges - we've simplified everything to **one command**:
+
+```bash
+cd inference
+python batch_processor.py
+```
+
+**That's it!** The tool will:
+- Auto-detect videos in input folder (or run demo mode if none found)
+- Process with Samsung-optimized performance settings
+- Generate professional reports in output/ and reports/ folders
 
 ```
 📁 inference/
 ├── 📂 input/           # Drop test videos here (.mp4, .avi, .mov, .mkv)
 ├── 📂 output/          # Processed frames and anomaly detections
 ├── 📂 reports/         # Professional JSON + HTML reports
-├── 📋 samsung_demo.ipynb   # Interactive Jupyter notebook for live demos
-├── 🔧 batch_processor.py   # Command-line processing engine
-└── 📖 README.md        # Detailed usage instructions
+├── 🔧 batch_processor.py   # One-command evaluation tool
+└── 📖 README.md        # Simple usage instructions
 ```
 
 ### ⚡ **Samsung Performance Optimizations**
@@ -486,6 +495,7 @@ anomaly-detection-TriFusion/
         ├── pose_processing.py      # MediaPipe pose analysis
         ├── scene_processing.py     # CLIP/BLIP visual analysis
         └── fusion_logic.py         # AI reasoning & decision fusion
+
 ```
 
 ## 🎯 Use Cases

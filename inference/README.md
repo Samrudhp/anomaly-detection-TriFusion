@@ -11,19 +11,15 @@ inference/
 ├── input/          # Drop your test videos here (.mp4, .avi, .mov)
 ├── output/         # Processed video frames and anomaly detections
 ├── reports/        # Generated analysis reports (JSON, HTML)
-├── samsung_demo.ipynb  # Interactive Jupyter notebook for evaluation
 └── batch_processor.py  # Core batch processing engine
 ```
 
 ## 🚀 Quick Start for Samsung Evaluators
 
-### Option 1: Jupyter Notebook (Recommended)
-1. Open `samsung_demo.ipynb` in VS Code or Jupyter
-2. Follow the interactive cells to process videos
-3. Professional reports generated automatically
-
-### Option 2: Direct Processing
+- setup environment first 
+### Option 1: Direct Processing
 1. Place videos in `input/` folder
+-  cd inference 
 2. Run: `python batch_processor.py`
 3. Check `reports/` for analysis results
 

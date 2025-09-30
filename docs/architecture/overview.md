@@ -25,7 +25,7 @@ Two-tier architecture solves this by separating concerns:
 
 ## 🏛️ Architecture Diagram
 
-```mermaid
+``` mermaid
 graph TB
     subgraph "Input Streams"
         A[📹 Video Feed] --> T1
@@ -60,7 +60,7 @@ graph TB
 
     F2 --> ALERT[🚨 Smart Alert<br/>+ Dashboard Update]
     F2 --> LOG[📊 Event Storage]
-```
+``` 
 
 ---
 

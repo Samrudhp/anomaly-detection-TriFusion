@@ -72,9 +72,9 @@
 ## 📞 Support & Contact
 
 ### **Team Contact Information**
-- **Samrudh P**: 1ms23cs162@msrit.edu (Team Lead & AI Architecture)
-- **Sagar S R**: 1ms23cs158@msrit.edu (Backend Development & Integration)
-- **Ranjita V Nayak**: 1ms23cs150@msrit.edu (Frontend & UX Design)
+- **Samrudh P**: 1ms23cs162@msrit.edu 
+- **Sagar S R**: 1ms23cs158@msrit.edu 
+- **Ranjita V Nayak**: 1ms23cs150@msrit.edu 
 
 ### **Project Repository**
 - **GitHub**: [anomaly-detection-TriFusion](https://github.com/Samrudhp/anomaly-detection-TriFusion)
