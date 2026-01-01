@@ -1,7 +1,5 @@
 # 🛡️ TriFusion Family Care AI
 
-## TriFusion_MSRIT_1_SamrudhP
-
 ## Samsung PRISM GenAI Hackathon 2025
 
 **🤖 GenAI-Powered MultiModal Anomaly Detection System for Family Safety & Elder Care with Neurosymbolic reasoning** 
@@ -17,16 +15,7 @@
 - **Theme**: AI-Powered Family Safety & Elder Care
 - **Technology**: Multimodal AI Fusion (Vision + Audio + Pose Detection)
 
----
-## 👥 Team Members
 
-| Name | Email | 
-|------|-------|
-| **Samrudh P** | 1ms23cs162@msrit.edu | 
-| **Sagar S R** | 1ms23cs158@msrit.edu | 
-| **Ranjita V Nayak** | 1ms23cs150@msrit.edu | 
-
----
 ### Submissions
  ## The demo video
 [The demo video](https://drive.google.com/file/d/19EPsWz1cJajohpxkTi2Z5H1Yrt7QgNIh/view?usp=sharing)
