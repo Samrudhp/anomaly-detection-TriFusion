@@ -2,7 +2,7 @@
 
 ## Samsung PRISM GenAI Hackathon 2025
 
-**🤖 GenAI-Powered MultiModal Anomaly Detection System for Family Safety & Elder Care with Neurosymbolic reasoning** 
+**🤖 Vishvabodh : GenAI-Powered Real-Time MultiModal Anomaly Detection System for Family Safety & Elder Care with Neurosymbolic reasoning** 
 
 **🏠 Smart Home Integration**
 
@@ -14,6 +14,109 @@
 - **Team Name**: TriFusion
 - **Theme**: AI-Powered Family Safety & Elder Care
 - **Technology**: Multimodal AI Fusion (Vision + Audio + Pose Detection)
+
+
+## System Architecture
+
+``` mermaid
+graph TB
+    subgraph "Input Layer"
+        CAM[Camera/Video Feed]
+        MIC[Microphone/Audio]
+        UP[Video Upload]
+    end
+    
+    subgraph "Capture & Preprocessing"
+        VC[Video Capture Thread<br/>OpenCV]
+        AS[Audio Stream Thread<br/>PyAudio Buffer]
+        FQ[Frame Queue<br/>Thread-Safe]
+        
+        CAM --> VC
+        UP --> VC
+        MIC --> AS
+        VC --> FQ
+    end
+    
+    subgraph "Tier 1: Fast Detection <100ms"
+        T1[Tier 1 Pipeline]
+        
+        subgraph "Multimodal Analysis"
+            CLIP[CLIP Vision<br/>Scene Understanding]
+            MP[MediaPipe Pose<br/>Human Detection]
+            AFFT[Audio FFT<br/>Sound Analysis]
+        end
+        
+        FQ --> T1
+        AS --> T1
+        T1 --> CLIP
+        T1 --> MP
+        T1 --> AFFT
+    end
+    
+    subgraph "Fusion Logic"
+        FL[Fusion Engine<br/>Threshold Detection]
+        DEC{Anomaly<br/>Suspected?}
+        
+        CLIP --> FL
+        MP --> FL
+        AFFT --> FL
+        FL --> DEC
+    end
+    
+    subgraph "Tier 2: Deep AI Reasoning 1-3s"
+        T2[Tier 2 Pipeline]
+        
+        subgraph "Advanced AI Models"
+            BLIP[BLIP-2<br/>Image Captioning]
+            WHIS[Whisper<br/>Speech Recognition]
+            LLM[Groq LLM<br/>Contextual Analysis]
+        end
+        
+        DEC -->|Yes| T2
+        T2 --> BLIP
+        T2 --> WHIS
+        BLIP --> LLM
+        WHIS --> LLM
+    end
+    
+    subgraph "Backend Processing"
+        SM[Session Manager<br/>AsyncIO + Threading]
+        LOCK[Thread Lock<br/>Resource Sync]
+        RES[Resource Manager<br/>Video/Audio/Files]
+        
+        SM --> LOCK
+        SM --> RES
+    end
+    
+    subgraph "Real-Time Communication"
+        WS[WebSocket<br/>FastAPI]
+        HTTP[REST API<br/>Status/Control]
+    end
+    
+    subgraph "Output Layer"
+        DASH[Dashboard UI<br/>Live Updates]
+        RPT[Reports<br/>JSON + HTML]
+        ALERT[Alert System<br/>Real-time Notifications]
+        ST[Samsung SmartThings<br/>IoT Integration]
+    end
+    
+    DEC -->|No| DASH
+    LLM --> SM
+    SM --> WS
+    SM --> HTTP
+    WS --> DASH
+    HTTP --> DASH
+    SM --> RPT
+    SM --> ALERT
+    ALERT --> ST
+    
+    style T1 fill:#e3f2fd
+    style T2 fill:#fff3e0
+    style SM fill:#f3e5f5
+    style WS fill:#e8f5e9
+    style DASH fill:#fce4ec
+    style ST fill:#1428a0,color:#fff
+```
 
 
 ### Submissions
